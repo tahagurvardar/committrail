@@ -167,7 +167,11 @@ suite("Phase 3 PostgreSQL queue and evidence graph", () => {
       where: { githubDeliveryId: "phase3-delivery-1" },
     });
     expect(delivery.duplicateCount).toBe(1);
-    expect(JSON.stringify(delivery)).not.toContain("private body");
+    expect(
+      JSON.stringify(delivery, (_key, value) =>
+        typeof value === "bigint" ? value.toString() : value,
+      ),
+    ).not.toContain("private body");
     const job = await prisma.ingestionJob.findFirstOrThrow({
       where: { trackedRepositoryId: repositoryId, kind: "PULL_REQUESTS" },
     });
