@@ -42,19 +42,19 @@ export function AppFooter() {
             Status
           </p>
           <p className="mt-3 max-w-xs leading-relaxed text-muted-foreground">
-            Phase 0 — product foundation. Synthetic demo only: no GitHub
-            connection, no accounts, no data persistence, no deployment.
+            Phase 1A — live read-only snapshots of public repositories, plus the
+            synthetic full-product demo. No accounts, no data persistence, no
+            deployment yet.
           </p>
-          <button
-            type="button"
-            aria-disabled="true"
-            title="The source repository link goes live with the public release"
-            className="mt-3 inline-flex cursor-not-allowed items-center gap-1.5 rounded-md text-muted-foreground opacity-70"
+          <a
+            href={siteConfig.repositoryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md text-muted-foreground transition-colors hover:text-foreground"
           >
             <ExternalLinkIcon className="size-3.5" />
             Source repository
-            <span className="sr-only">(link not yet active)</span>
-          </button>
+          </a>
           <p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">
             Licensing will be decided before the public v1 release.
           </p>
@@ -67,7 +67,7 @@ export function AppFooter() {
             CommitTrail is an independent project and is not affiliated with,
             endorsed by, or sponsored by GitHub, Inc.
           </p>
-          <p className="font-mono">Phase 0 preview</p>
+          <p className="font-mono">Phase 1A snapshot</p>
         </div>
       </div>
     </footer>

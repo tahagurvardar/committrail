@@ -50,10 +50,10 @@ describe("landing page", () => {
     }
   });
 
-  it("discloses that Phase 0 has no GitHub connection", () => {
+  it("discloses the Phase 1A live-snapshot scope honestly", () => {
     render(<HomePage />);
     expect(
-      screen.getByText(/no github connection exists yet/i),
+      screen.getByText(/snapshot public repositories,\s*read-only/i),
     ).toBeInTheDocument();
   });
 });

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { AlertIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
@@ -16,8 +18,15 @@ export function DemoBanner({ className }: { className?: string }) {
       <p className="leading-relaxed text-amber-950 dark:text-amber-100">
         <strong className="font-semibold">Synthetic demo.</strong> Every
         developer, repository, and metric on this page is fictional and
-        generated deterministically from code checked into this repository. No
-        GitHub account is connected in Phase 0.
+        generated deterministically from code — it previews future product
+        surfaces. For real public data, use{" "}
+        <Link
+          href="/explore"
+          className="font-medium underline underline-offset-2"
+        >
+          Explore
+        </Link>
+        . No GitHub account is connected.
       </p>
     </div>
   );

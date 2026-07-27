@@ -6,6 +6,15 @@ const nextConfig: NextConfig = {
     // change how the build resolves files.
     root: __dirname,
   },
+  images: {
+    // Repository owner avatars rendered on the public snapshot route.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

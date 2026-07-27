@@ -295,10 +295,14 @@ export default function MethodologyPage() {
       </section>
 
       <p className="mt-16 max-w-2xl rounded-xl border border-border bg-surface p-6 text-sm leading-relaxed text-muted-foreground">
-        <strong className="font-medium text-foreground">Phase 0 status:</strong>{" "}
-        the pipeline described here is the product’s contract, demonstrated with
-        synthetic data. GitHub ingestion, persistence, and drafting arrive in
-        later phases — see the roadmap in the repository documentation.
+        <strong className="font-medium text-foreground">
+          Phase 1A status:
+        </strong>{" "}
+        the first pipeline stage is live — read-only public repository snapshots
+        showing direct facts only. Activity ingestion, the evidence graph,
+        drafting, and publishing arrive in later phases and are demonstrated
+        with synthetic data until then — see the roadmap in the repository
+        documentation.
       </p>
     </div>
   );

@@ -12,9 +12,13 @@ describe("AppHeader", () => {
     );
   });
 
-  it("exposes the main navigation with the three product routes", () => {
+  it("exposes the main navigation with the product routes", () => {
     render(<AppHeader />);
     const nav = screen.getByRole("navigation", { name: "Main" });
+    expect(within(nav).getByRole("link", { name: "Explore" })).toHaveAttribute(
+      "href",
+      "/explore",
+    );
     expect(within(nav).getByRole("link", { name: "Product" })).toHaveAttribute(
       "href",
       "/about",
@@ -28,12 +32,11 @@ describe("AppHeader", () => {
     );
   });
 
-  it("marks the GitHub action as unavailable in Phase 0", () => {
+  it("links the primary action to the live explore flow", () => {
     render(<AppHeader />);
-    const gitHubButton = screen.getByRole("button", {
-      name: /github.*unavailable in phase 0/i,
-    });
-    expect(gitHubButton).toHaveAttribute("aria-disabled", "true");
+    expect(
+      screen.getByRole("link", { name: /explore a repository/i }),
+    ).toHaveAttribute("href", "/explore");
   });
 
   it("gives the theme toggle an accessible name", () => {

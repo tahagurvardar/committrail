@@ -13,20 +13,40 @@ deployment.
 ## Phase 1 — Public repository snapshot
 
 A first, honest slice of real GitHub data — without accounts or
-infrastructure:
+infrastructure. Shared constraints for both halves: **no user account**, no
+GitHub App installation, no private repository access, no GitHub write
+operation, no published AI-generated claims, no paid infrastructure.
+Interfaces may prepare for later persistence, but neither Better Auth nor
+the GitHub App installation flow appears here.
 
-- Accept a public GitHub repository URL or `owner/repository` identifier.
-- Fetch public repository information through a **server-owned provider
-  interface** (no API calls from client code; provider swappable in tests).
-- Display a read-only repository snapshot.
-- Fixture-backed deterministic tests for the provider and the snapshot UI.
-- Handle missing repositories, inaccessible repositories, API errors, and
-  rate-limit responses honestly — real error states, no fabricated data.
-- Requires **no user account** and **no GitHub App installation**; requests
-  no private repository access; performs no GitHub write operation;
-  publishes no AI-generated claims; avoids paid infrastructure.
-- May prepare interfaces for later persistence, but introduces neither
-  Better Auth nor the GitHub App installation flow.
+### Phase 1A — Input, provider boundary, repository overview ✅ (implemented)
+
+- Accepts a public GitHub repository URL or `owner/repository` identifier,
+  parsed and validated into `{ owner, repo }` (SSRF boundary — visitor input
+  is never fetched).
+- Fetches repository metadata, languages, and README through the
+  server-owned `PublicRepositoryProvider` interface (native server `fetch`,
+  fixed `api.github.com` base, optional server-only `GITHUB_TOKEN`).
+- Renders a read-only snapshot: identity, status, counts, dates, license,
+  topics, language distribution, README excerpt — direct facts only.
+- Honest typed failure states: not-found-or-inaccessible; rate-limited on
+  reliable 403/429 markers with GitHub-provided retry timing when available;
+  timeout; upstream unavailability; configuration problems; malformed
+  responses.
+- Fixture-backed deterministic tests for parser, provider, and UI; no test
+  depends on live GitHub.
+- Success-only, normalized snapshot caching for about five minutes with a
+  visible freshness disclosure; transient and access failures are not cached
+  as snapshot values.
+
+### Phase 1B — Public activity ingestion (pending)
+
+- Commit, pull request, issue, release, and workflow-run ingestion for the
+  snapshot view — still public-data, read-only, account-free.
+- First deterministic derivations over real activity (e.g. release cadence,
+  CI pass rates) with recomputability guarantees.
+- No milestone generation, no case-study generation, no AI summaries, no
+  contributor rankings, no repository scoring.
 
 ## Phase 2 — Identity, persistence, and GitHub App connection
 
