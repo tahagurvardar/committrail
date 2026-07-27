@@ -246,7 +246,6 @@ async function createClaimFromCandidate(
       evidenceLinks: {
         create: citedEvidenceIds.map((repositoryEvidenceId) => ({
           repositoryEvidenceId,
-          trackedRepositoryId: candidate.request.trackedRepositoryId,
           linkedByUserId: authority.userId,
         })),
       },

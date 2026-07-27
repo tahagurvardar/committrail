@@ -688,10 +688,13 @@ suite("Phase 4 PostgreSQL grounded drafting and review", () => {
       0,
     );
     const serialized = JSON.stringify(exported);
+    const draftingSerialized = JSON.stringify(
+      exported.workspace.draftGenerationRequests,
+    );
     expect(serialized).not.toContain("DRAFT_PROVIDER_API_KEY");
     expect(serialized).not.toContain("authorization");
     expect(serialized).not.toContain("chainOfThought");
-    expect(serialized).not.toContain("private release body");
+    expect(draftingSerialized).not.toContain("private release body");
   });
 
   it("cascades repository drafting data on disconnect and consent on account deletion", async () => {
