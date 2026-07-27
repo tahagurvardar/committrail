@@ -1,6 +1,6 @@
 # CommitTrail — Architecture
 
-_Phase 1B revision. Current architecture first; everything under "Reserved"
+_Phase 2 revision. Current architecture first; everything under "Reserved"
 is planned but intentionally **not implemented**._
 
 ## Current architecture (Phase 1B)
@@ -173,3 +173,14 @@ The Phase 0 domain model is shaped so these can be added without rewrites.
 - [0001 — Single Next.js application](decisions/0001-single-nextjs-application.md)
 - [0002 — Evidence-first domain model](decisions/0002-evidence-first-domain-model.md)
 - [0003 — No developer ranking](decisions/0003-no-developer-ranking.md)
+  Phase 2 mounts Better Auth lazily at `/api/auth/[...all]` over the Prisma
+  adapter. Dashboard layouts, actions, callbacks, exports, and repository
+  queries repeat session/workspace authorization server-side; `src/proxy.ts`
+  is only an early cookie-presence redirect. Private routes are dynamic and
+  never use the public Phase 1 caches.
+
+PostgreSQL stores auth records, one owner workspace, verified installation
+metadata, tracked identities, normalized snapshots/evidence, manual sync runs,
+and minimal audits. GitHub activation requires app-authenticated installation
+lookup plus separate user OAuth verification with new state and PKCE. Tokens
+are intentionally absent from the schema.

@@ -1,6 +1,6 @@
 # CommitTrail — Security and Privacy
 
-_Phase 1B revision. This document states the commitments the implementation
+_Phase 2 revision. This document states the commitments the implementation
 is held to. Where a mechanism is future work, it is marked with the phase
 that introduces it._
 
@@ -124,3 +124,10 @@ repository content. Logging uses allow-listed structured fields; identifiers
 Until a proper security policy ships with the public release, security
 concerns can be raised as repository issues marked confidential-appropriate
 (no exploit details in public issues).
+Phase 2 scopes every dashboard query from the session user through workspace
+membership. Setup state is random and stored only as a hash; PKCE verifier
+material uses versioned AES-256-GCM with unique nonces and associated data.
+The setup installation ID stays pending until GitHub OAuth proves that the
+user can access it. JWTs and tokens are short-lived memory values and never
+enter PostgreSQL, browser code, logs, exports, or caches. Export and callbacks
+send private/no-store responses. Disconnect and deletion make no GitHub write.

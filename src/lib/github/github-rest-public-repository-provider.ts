@@ -13,7 +13,9 @@ import type {
   RepositoryIdentifier,
 } from "@/lib/github/types";
 
-export type GitHubProviderOptions = GitHubRestClientOptions;
+export type GitHubProviderOptions = GitHubRestClientOptions & {
+  allowPrivate?: boolean;
+};
 
 /**
  * Read-only Phase 1A snapshot provider.
@@ -24,10 +26,12 @@ export type GitHubProviderOptions = GitHubRestClientOptions;
 export class GitHubRestPublicRepositoryProvider implements PublicRepositoryProvider {
   private readonly client: GitHubRestClient;
   private readonly now: () => Date;
+  private readonly allowPrivate: boolean;
 
   constructor(options: GitHubProviderOptions = {}) {
     this.client = new GitHubRestClient(options);
     this.now = options.now ?? (() => new Date());
+    this.allowPrivate = options.allowPrivate ?? false;
   }
 
   async getRepositorySnapshot(
@@ -51,6 +55,7 @@ export class GitHubRestPublicRepositoryProvider implements PublicRepositoryProvi
       readme: readmeResponse.body,
       fetchedAt: this.now().toISOString(),
       rateLimit,
+      allowPrivate: this.allowPrivate,
     });
   }
 }

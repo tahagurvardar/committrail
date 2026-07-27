@@ -4,6 +4,12 @@ Phases are scoped so each one ships a coherent, verifiable slice. Later
 phases may split further; boundaries (read-only, no ranking, user approval)
 hold in every phase.
 
+Phase 2 is implemented: Better Auth identity, PostgreSQL/Prisma persistence,
+personal workspaces, verified selected-repository GitHub App connection,
+manual bounded synchronization, export, disconnect, and deletion. GitHub
+tokens are never stored. Continuous ingestion and the claim/evidence graph
+remain Phase 3 work.
+
 ## Phase 0 — Product foundation ✅ (complete)
 
 Design system, landing page, synthetic demo, about/methodology pages,
