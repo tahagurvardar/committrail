@@ -120,13 +120,11 @@ export async function processDraftGenerationJob(
             validated.coverage.unusedSelectedEvidenceCount,
           sentences: {
             create: validated.output.sentences.map((sentence, position) => ({
-              draftRequestId: fresh.id,
               position,
               text: sentence.text,
               citations: {
                 create: sentence.evidenceIds.map(
                   (repositoryEvidenceId, citationPosition) => ({
-                    draftRequestId: fresh.id,
                     repositoryEvidenceId,
                     trackedRepositoryId: fresh.trackedRepositoryId,
                     position: citationPosition,
