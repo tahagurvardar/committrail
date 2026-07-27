@@ -217,7 +217,6 @@ async function enqueueDraftRequest(input: {
           evidenceSelections: {
             create: input.built.bundle.evidence.map((evidence, position) => ({
               repositoryEvidenceId: evidence.id,
-              trackedRepositoryId: input.trackedRepositoryId,
               evidenceContentHash: evidence.contentHash,
               position,
             })),
