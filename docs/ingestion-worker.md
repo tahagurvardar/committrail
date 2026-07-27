@@ -22,3 +22,11 @@ A workspace owner can create a new repository-scoped retry from a DEAD job.
 The historical job remains DEAD. Queue rows contain minimal routing data and
 never contain installation tokens, app keys, webhook bodies, response bodies,
 authorization headers, or repository content.
+
+`GROUNDED_DRAFT` extends the same lease, `SKIP LOCKED`, attempt, and backoff
+mechanics. The job payload contains only the opaque draft request ID. The
+handler reloads canonical evidence and consent, marks the request running,
+performs the provider call outside all transactions, validates the bounded
+response, and transactionally persists one candidate. Timeout, 429, 5xx, and
+temporary connections retry; invalid configuration/evidence/output/consent and
+policy violations fail permanently with sanitized codes.

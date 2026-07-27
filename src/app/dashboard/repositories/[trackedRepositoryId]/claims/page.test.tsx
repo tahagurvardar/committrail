@@ -53,11 +53,16 @@ describe("claims list UI", () => {
     });
     expect(statement).toHaveAttribute("maxlength", "500");
     expect(statement).toHaveAccessibleDescription(/Plain text/);
-    expect(screen.getByText(/does not generate claim text/)).toBeVisible();
+    expect(
+      screen.getByText(/explicitly accepted AI-assisted suggestions/),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: /Open private grounded drafts/ }),
+    ).toHaveAttribute("href", "/dashboard/repositories/repo-1/drafts");
     expect(
       screen.getByRole("link", { name: "Shipped a durable queue." }),
     ).toBeVisible();
-    expect(screen.getByText("VERIFIED")).toBeVisible();
+    expect(screen.getByText(/VERIFIED.*Human origin/)).toBeVisible();
     expect(screen.getByText(/1 linked fact/)).toBeVisible();
   });
 });

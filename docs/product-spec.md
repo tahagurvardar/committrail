@@ -1,22 +1,23 @@
 # CommitTrail — Product specification
 
-_Phase 3 revision: verified webhook ingestion and the human-reviewed evidence graph._
+_Phase 4 revision: grounded drafting and private review._
 
 ## Definition
 
 CommitTrail turns bounded GitHub facts into private, inspectable engineering
 claims where every reviewed statement links to repository evidence.
 
-## Phase 3 user outcome
+## Phase 4 user outcome
 
 A signed-in personal workspace owner can connect a verified read-only GitHub
 App installation, track a public or private repository, retain normalized
 facts, receive signed event signals, inspect durable ingestion health, recover
-with manual sync, author a plain-text claim, link same-repository facts, and
-explicitly mark the claim verified after review.
+with manual sync, author a plain-text claim, or explicitly select facts for a
+private grounded suggestion. The owner accepts, edits, links, and explicitly
+verifies claims after review.
 
-Verification means owner review, not external certification. Claims are
-private and human-authored.
+Verification means owner review, not external certification. Claims and
+candidates remain private.
 
 ## Evidence boundary
 
@@ -45,7 +46,9 @@ ignored or queued result before responding. It subscribes only to `push`,
 
 ## Claim rules
 
-- Plain text only, 1–500 characters, no model-generated content.
+- Plain text only, 1–500 characters.
+- Human-authored claims use `HUMAN` origin; accepted candidates use
+  `AI_ASSISTED` origin and never auto-verify.
 - Zero evidence is NEEDS_EVIDENCE.
 - Verification requires at least one same-workspace/same-repository fact.
 - Editing after verification clears `verifiedAt` and returns to DRAFT.
@@ -57,7 +60,7 @@ ignored or queued result before responding. It subscribes only to `push`,
 
 ## Hard boundaries
 
-No AI/RAG/embeddings, public profiles or publishing, case-study/CV/interview
+No RAG/embeddings, public profiles or publishing, case-study/CV/social
 generation, teams, comments, billing, email, cron, Redis/external queues,
 paid infrastructure, source cloning/execution, diffs, reviews/comments,
 workflow logs/jobs/artifacts, release assets, GitHub writes, developer
@@ -72,6 +75,8 @@ ranking, scoring, seniority, productivity, or quality inference.
   read-only GitHub App, private tracking, manual sync, export/deletion.
 - Phase 3: verified webhooks, durable PostgreSQL queue/worker, targeted
   reconciliation, observations, private human-authored claims and graph.
+- Phase 4: optional provider-neutral grounded drafting over 1–12 explicitly
+  selected facts, strict sentence citations, external-transfer consent,
+  immutable candidates, and human-only acceptance and verification.
 
-Phase 4 is limited to grounded drafting and fuller private review over these
-existing evidence links. It must not auto-verify or auto-publish.
+Publishing and portfolio outputs are deferred to Phase 5.

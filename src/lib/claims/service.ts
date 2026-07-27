@@ -64,19 +64,42 @@ export async function editClaim(input: {
     async (tx, claim) => {
       if (claim.status === "ARCHIVED") throw new Error("CLAIM_ARCHIVED");
       const status = claim.status === "VERIFIED" ? "DRAFT" : claim.status;
+      const humanEditedAfterAcceptance =
+        claim.origin === "AI_ASSISTED"
+          ? true
+          : claim.humanEditedAfterAcceptance;
       const updated = await guardedUpdate(tx, claim.id, expectedVersion, {
         statement,
         status,
         verifiedAt: null,
+        humanEditedAfterAcceptance,
       });
       await writeRevision(
         tx,
         authority,
         updated,
-        "STATEMENT_EDITED",
+        claim.origin === "AI_ASSISTED"
+          ? "HUMAN_EDIT_AFTER_ACCEPTANCE"
+          : "STATEMENT_EDITED",
         "Statement edited; verification cleared.",
       );
       await writeAudit(tx, authority, claim.id, "claim.edited");
+      if (claim.origin === "AI_ASSISTED") {
+        const candidate = await tx.draftCandidate.findFirst({
+          where: { acceptedClaimId: claim.id },
+          select: { id: true, requestId: true },
+        });
+        await tx.draftReviewEvent.create({
+          data: {
+            workspaceId: authority.workspaceId,
+            draftRequestId: candidate?.requestId,
+            candidateId: candidate?.id,
+            claimId: claim.id,
+            actorUserId: authority.userId,
+            kind: "HUMAN_EDITED",
+          },
+        });
+      }
       return updated;
     },
   );

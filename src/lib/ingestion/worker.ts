@@ -7,6 +7,9 @@ import type {
   Prisma,
 } from "@/generated/prisma/client";
 import { getPrisma } from "@/lib/db/prisma";
+import { isDraftingError } from "@/lib/drafting/errors";
+import { processDraftGenerationJob } from "@/lib/drafting/worker-handler";
+import type { GroundedDraftProvider } from "@/lib/drafting/types";
 import { isProviderError } from "@/lib/github/errors";
 import { reconcileRepositorySource } from "@/lib/repositories/reconcile";
 
@@ -60,9 +63,14 @@ export async function claimIngestionJobs(input?: {
   });
 }
 
-export async function processIngestionJob(job: IngestionJob): Promise<void> {
+export async function processIngestionJob(
+  job: IngestionJob,
+  options?: { draftProvider?: GroundedDraftProvider },
+): Promise<void> {
   try {
-    if (job.trackedRepositoryId) {
+    if (job.kind === "GROUNDED_DRAFT") {
+      await processDraftGenerationJob(job.id, options?.draftProvider);
+    } else if (job.trackedRepositoryId) {
       await reconcileRepositorySource({
         jobId: job.id,
         generation: job.generation,
@@ -104,6 +112,12 @@ export function classifyIngestionError(error: unknown): {
   retryable: boolean;
   retryAt: Date | null;
 } {
+  if (isDraftingError(error))
+    return {
+      code: error.code,
+      retryable: error.retryable,
+      retryAt: error.retryAt,
+    };
   const providerCode = isProviderError(error)
     ? {
         "invalid-input": "GITHUB_INVALID_INPUT",
@@ -187,8 +201,8 @@ async function failJob(job: IngestionJob, error: unknown) {
   const availableAt =
     failure.retryAt ??
     new Date(Date.now() + ingestionBackoffMs(job.attemptCount));
-  await prisma.$transaction([
-    prisma.ingestionJob.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.ingestionJob.update({
       where: { id: job.id },
       data: {
         status,
@@ -198,8 +212,8 @@ async function failJob(job: IngestionJob, error: unknown) {
         leaseExpiresAt: null,
         sanitizedLastErrorCode: failure.code,
       },
-    }),
-    prisma.webhookDelivery.updateMany({
+    });
+    await tx.webhookDelivery.updateMany({
       where: {
         ingestionJobId: job.id,
         jobGeneration: { lte: job.generation },
@@ -212,8 +226,34 @@ async function failJob(job: IngestionJob, error: unknown) {
               processedAt: new Date(),
               sanitizedErrorCode: failure.code,
             },
-    }),
-  ]);
+    });
+    if (job.kind === "GROUNDED_DRAFT") {
+      const request = await tx.draftGenerationRequest.findFirst({
+        where: { ingestionJobId: job.id },
+        select: { id: true, workspaceId: true },
+      });
+      if (request) {
+        await tx.draftGenerationRequest.update({
+          where: { id: request.id },
+          data: {
+            status: status === "PENDING" ? "QUEUED" : "FAILED",
+            completedAt: status === "PENDING" ? null : new Date(),
+            sanitizedErrorCode: failure.code,
+          },
+        });
+        if (status !== "PENDING") {
+          await tx.draftReviewEvent.create({
+            data: {
+              workspaceId: request.workspaceId,
+              draftRequestId: request.id,
+              kind: "GENERATION_FAILED",
+              metadata: { errorCode: failure.code },
+            },
+          });
+        }
+      }
+    }
+  });
 }
 
 async function processInstallationJob(job: IngestionJob) {

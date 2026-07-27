@@ -1,14 +1,14 @@
 # CommitTrail
 
-> **Status: Phase 3 — verified webhook ingestion and the human-reviewed evidence graph.**
+> **Status: Phase 4 — grounded drafting and private review.**
 > The account-free explorer remains available. Users can create a private
 > personal workspace, verify a read-only GitHub App installation, track public
 > or private repositories, persist bounded normalized evidence, synchronize
 > manually, receive verified GitHub App webhooks, process durable targeted
-> jobs, inspect provenance, and create private human-authored claims. There is
-> no ranking, deployment, public publishing, or AI.
+> jobs, inspect provenance, author private claims, and review grounded drafting
+> suggestions. There is no ranking, deployment, or public publishing.
 
-Phase 3 uses PostgreSQL 17, Prisma ORM 7.9.1 with the `pg` driver adapter,
+CommitTrail uses PostgreSQL 17, Prisma ORM 7.9.1 with the `pg` driver adapter,
 Better Auth 1.6.25 with database sessions, and JOSE 6.2.4 for short-lived
 RS256 GitHub App JWTs. See [local database setup](docs/local-database.md),
 [GitHub App setup](docs/github-app-setup.md), and the
@@ -21,9 +21,8 @@ RS256 GitHub App JWTs. See [local database setup](docs/local-database.md),
 
 CommitTrail is an evidence-first engineering timeline and portfolio
 intelligence platform. It reads repository facts and bounded recent activity,
-then—only in later phases—will help developers turn reviewed evidence into
-project milestones and case studies where **every technical claim links to
-concrete evidence**.
+then helps owners create and review private evidence-linked claim suggestions.
+Public project milestones and case studies remain deferred.
 
 CommitTrail is deliberately _not_ a statistics dashboard. It never ranks
 developers, never infers seniority, and never treats commit counts as
@@ -39,7 +38,7 @@ productivity. See [docs/methodology.md](docs/methodology.md) and
 | `/repositories/[owner]/[repo]` | Real snapshot plus bounded recent public activity evidence               |
 | `/demo`                        | Deterministic synthetic full-product preview (fictional data, labeled)   |
 | `/login`, `/register`          | Better Auth email/password identity; no email delivery                   |
-| `/dashboard/*`                 | Private delivery/job health, evidence, claims, and graph                 |
+| `/dashboard/*`                 | Private delivery/job health, evidence, drafts, claims, and graph         |
 | `/about`                       | Product purpose, what it is / is not, trust principles                   |
 | `/methodology`                 | Facts → evidence → claims → user approval, states, boundaries            |
 | `*`                            | Custom not-found page                                                    |
@@ -142,7 +141,7 @@ npm ci
 npm run dev
 ```
 
-The public explorer still needs no account or secret. Private Phase 3 work
+The public explorer still needs no account or secret. Private Phase 4 work
 requires PostgreSQL and the Phase 2 auth/App variables; webhook intake also
 requires `GITHUB_WEBHOOK_SECRET`.
 
@@ -181,8 +180,8 @@ failure state. Demo fixtures remain pinned by exact-value tests.
 
 A single Next.js application with the public provider boundary, Better Auth,
 Prisma/PostgreSQL, a read-only GitHub App, verified minimal-envelope webhook
-intake, durable targeted jobs, append-only observations, and a private
-human-reviewed claim/evidence graph. Publishing and grounded drafting remain
+intake, durable targeted and grounded-drafting jobs, append-only observations,
+and a private human-reviewed claim/evidence graph. Publishing remains
 deferred. Details:
 [docs/architecture.md](docs/architecture.md).
 
@@ -195,7 +194,7 @@ Documentation index:
 - [docs/methodology.md](docs/methodology.md) — evidence, claims, and approval
 - [docs/decisions/](docs/decisions) — architecture decision records
 
-## Current limitations (Phase 3)
+## Current limitations (Phase 4)
 
 - Activity is a page-one recent sample, not complete history: 20 commits, 20
   pull requests, 20 issue-endpoint records before PR filtering, 10 releases,
@@ -208,8 +207,9 @@ Documentation index:
 - The `/demo` dashboard remains fully synthetic and clearly labeled.
 - Webhook workers are explicit local/server processes; there is no scheduler,
   hosted queue, polling, or automatic redelivery.
-- Claims are private and human-authored. There is no AI drafting, public
-  profile, publishing, billing, team collaboration, or deployment.
+- Claims and grounded suggestions are private. Drafting is disabled unless an
+  operator configures a local or external OpenAI-compatible provider; there is
+  no public profile, publishing, billing, team collaboration, or deployment.
 - Playwright is configured but browser tests are opt-in and not in CI.
 - `npm audit` reports advisories confined to the ESLint dev toolchain;
   the runtime audit (`npm audit --omit=dev`) is clean.
@@ -219,3 +219,19 @@ Documentation index:
 
 CommitTrail is an independent project and is not affiliated with, endorsed
 by, or sponsored by GitHub, Inc.
+
+## Phase 4: private grounded drafting
+
+Grounded drafting is disabled by default and requires no paid API. An optional
+server-side OpenAI-compatible provider may be local loopback or external HTTPS;
+external use requires exact provider-specific workspace consent. Owners select
+1–12 stored facts, the PostgreSQL worker generates a strict private suggestion,
+and every retained sentence must cite selected evidence. Unknown citations,
+stale evidence, unsafe output, and ranking/productivity policy violations are
+mechanically rejected.
+
+Candidates are immutable and never publish or verify themselves. Explicit
+acceptance creates or replaces a private `AI_ASSISTED` claim in `DRAFT`; human
+editing and verification remain separate audited owner actions. See
+[`docs/grounded-drafting.md`](docs/grounded-drafting.md) and
+[`docs/drafting-provider-setup.md`](docs/drafting-provider-setup.md).

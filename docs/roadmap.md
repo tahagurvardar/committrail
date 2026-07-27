@@ -12,23 +12,23 @@
   deduplication, PostgreSQL queue/worker, targeted idempotent reconciliation,
   installation lifecycle handling, evidence observations, private
   human-authored claims, revision history, and accessible evidence graph.
+- Phase 4 — disabled-by-default provider-neutral grounded drafting over
+  explicit evidence, exact external-transfer consent, strict sentence
+  citations, immutable candidates, private claim acceptance, and human-only
+  verification.
 
-## Phase 4 — grounded drafting and fuller private review
+## Later, not authorized by Phase 4
 
-- A narrow provider-agnostic drafting boundary supplied only with persisted
-  evidence IDs and bounded factual records.
-- Mechanical rejection of unknown citations.
-- Explicit assisted-draft labeling, edit/reject paths, and owner review.
-- No automatic verification or publication.
-
-## Later, not authorized by Phase 3
-
-Phase 5 may consider explicit public publishing and export formats. Phase 6
-may consider sustainability and deployment. Teams, billing, email, and
-licensing require separate decisions.
+Phase 5 may consider explicit public publishing and portfolio export formats.
+Phase 6 may consider sustainability and deployment. Teams, billing, email,
+and licensing require separate decisions.
 
 ## Permanent non-goals
 
 GitHub write access, source-code execution, developer ranking/scoring,
 seniority or productivity inference, burnout estimation, and automatic
 publication.
+
+Phase 5 should consume only reviewed private claims to implement deliberate
+publishing and portfolio outputs. It must not publish candidates or bypass the
+existing owner review boundary.

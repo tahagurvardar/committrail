@@ -16,10 +16,12 @@ time, and normalized content hash. It is append-only and idempotent. A newer
 bounded sample does not erase older evidence. Deletion or lost access is an
 explicit source state, not fabricated absence.
 
-## Human-authored claims
+## Claims and authorship provenance
 
-Phase 3 claims are plain-text owner statements, never generated. The owner
-selects same-repository evidence and reviews the relationship.
+Phase 3 introduced plain-text owner statements. Phase 4 also permits an owner
+to accept a mechanically grounded candidate as an `AI_ASSISTED` claim. The
+owner selects same-repository evidence and reviews the relationship in both
+flows; a later human edit is recorded without erasing the assisted origin.
 
 ```text
 NEEDS_EVIDENCE -> DRAFT -> VERIFIED
@@ -41,7 +43,12 @@ quality; an issue title does not establish full decision context.
 
 ## Boundaries
 
-No AI drafting, RAG, embeddings, publication, ranking, scoring, seniority,
-productivity, code execution, or GitHub writes exist in Phase 3. Phase 4 may
-propose grounded drafts only over known evidence IDs and must preserve owner
-review.
+No RAG, embeddings, publication, ranking, scoring, seniority, productivity,
+code execution, or GitHub writes exist.
+
+Phase 4 creates private drafts only over explicitly selected known evidence
+IDs. Every sentence must cite at least one selected ID. `VALID` is a mechanical
+status: JSON shape, citation membership, evidence availability/version, text
+bounds, and conservative policy checks passed. It is not a truth probability,
+quality score, or certification. Caveats and unused-evidence counts remain
+visible for owner review.

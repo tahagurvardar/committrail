@@ -25,3 +25,15 @@ enforce that boundary in PostgreSQL. `ClaimRevision` is append-only.
 
 Workspace/user deletion cascades through this private graph. Installation
 deletion applies the existing privacy-preserving local disconnect behavior.
+
+Phase 4 adds `WorkspaceDraftingConsent`, `DraftGenerationRequest`,
+`DraftGenerationEvidence`, `DraftCandidate`, `DraftSentence`,
+`DraftSentenceEvidence`, and append-only `DraftReviewEvent`. Composite foreign
+keys ensure selections and citations remain in one request/repository. Partial
+unique indexes permit one active owner/repository request and one active
+equivalent request hash. Candidate-to-claim is one-to-one.
+
+`EvidenceClaim.origin` is `HUMAN` or `AI_ASSISTED`; a separate flag records a
+human edit after acceptance. Candidate sentences remain immutable while review
+status and grounding freshness can change. Repository/workspace/user cascades
+remove Phase 4 rows without orphans.
