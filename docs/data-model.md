@@ -1,13 +1,27 @@
-# Phase 2 data model
+# Phase 3 data model
 
 Better Auth owns `User`, `Session`, `Account`, and `Verification`.
-`Workspace` has a unique owner plus an idempotent owner membership.
-`GitHubConnectionAttempt` stores hashed state, encrypted short-lived PKCE
-material, expiry, consumption, and an optional pending installation ID.
+`Workspace` has one owner and an idempotent owner membership.
+`GitHubInstallation` stores verified non-secret metadata only.
+`TrackedRepository` is identified by GitHub database ID, not owner/name.
 
-`GitHubInstallation` stores verified non-secret metadata but no tokens.
-`TrackedRepository` uses GitHub’s database ID rather than owner/name.
-`RepositorySnapshot` and `RepositoryEvidence` contain normalized product
-models only. Evidence identity is unique by tracked repository and stable
-evidence ID. Sync runs contain sanitized state/counts; audit events are
-minimal. Cascades remain inside the owning account/workspace graph.
+`RepositorySnapshot` and `RepositoryEvidence` store normalized bounded
+records. Evidence has a deterministic content hash, availability/tombstone
+state, stable identity, and first/last-seen timestamps.
+`EvidenceObservation` is append-only provenance from MANUAL_SYNC or WEBHOOK;
+its deterministic key prevents duplicate delivery/run observations.
+
+`WebhookDelivery` stores the GitHub delivery ID, minimal routing IDs,
+payload digest/size, state, counters, and sanitized failure—never the body or
+headers. `IngestionJob` stores minimal work, lease/attempt state, and an
+active-source deduplication key. `RepositoryIngestionCursor` stores bounded
+source success metadata, never arbitrary pagination URLs.
+
+`EvidenceClaim` is a private 1–500 character owner-authored statement with
+DRAFT, NEEDS_EVIDENCE, VERIFIED, or ARCHIVED state and optimistic version.
+`ClaimEvidence` links facts within one repository; composite foreign keys
+enforce that boundary in PostgreSQL. `ClaimRevision` is append-only.
+`AuditEvent` stores minimal mutation metadata.
+
+Workspace/user deletion cascades through this private graph. Installation
+deletion applies the existing privacy-preserving local disconnect behavior.

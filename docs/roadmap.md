@@ -1,115 +1,34 @@
 # CommitTrail — Roadmap
 
-Phases are scoped so each one ships a coherent, verifiable slice. Later
-phases may split further; boundaries (read-only, no ranking, user approval)
-hold in every phase.
+## Complete
 
-Phase 2 is implemented: Better Auth identity, PostgreSQL/Prisma persistence,
-personal workspaces, verified selected-repository GitHub App connection,
-manual bounded synchronization, export, disconnect, and deletion. GitHub
-tokens are never stored. Continuous ingestion and the claim/evidence graph
-remain Phase 3 work.
+- Phase 0 — product foundation, design system, deterministic demo.
+- Phase 1A — SSRF-safe account-free public repository snapshot.
+- Phase 1B — bounded public activity facts and transparent derivations.
+- Phase 2 — Better Auth, PostgreSQL/Prisma, personal workspace, verified
+  read-only GitHub App, private repositories, normalized persistence,
+  bounded manual synchronization, export and deletion.
+- Phase 3 — exact-byte verified GitHub App webhooks, delivery
+  deduplication, PostgreSQL queue/worker, targeted idempotent reconciliation,
+  installation lifecycle handling, evidence observations, private
+  human-authored claims, revision history, and accessible evidence graph.
 
-## Phase 0 — Product foundation ✅ (complete)
+## Phase 4 — grounded drafting and fuller private review
 
-Design system, landing page, synthetic demo, about/methodology pages,
-documentation, tests, CI. No GitHub connection, no persistence, no
-deployment.
+- A narrow provider-agnostic drafting boundary supplied only with persisted
+  evidence IDs and bounded factual records.
+- Mechanical rejection of unknown citations.
+- Explicit assisted-draft labeling, edit/reject paths, and owner review.
+- No automatic verification or publication.
 
-## Phase 1 — Public repository snapshot
+## Later, not authorized by Phase 3
 
-A first, honest slice of real GitHub data — without accounts or
-infrastructure. Shared constraints for both halves: **no user account**, no
-GitHub App installation, no private repository access, no GitHub write
-operation, no published AI-generated claims, no paid infrastructure.
-Interfaces may prepare for later persistence, but neither Better Auth nor
-the GitHub App installation flow appears here.
+Phase 5 may consider explicit public publishing and export formats. Phase 6
+may consider sustainability and deployment. Teams, billing, email, and
+licensing require separate decisions.
 
-### Phase 1A — Input, provider boundary, repository overview ✅ (implemented)
+## Permanent non-goals
 
-- Accepts a public GitHub repository URL or `owner/repository` identifier,
-  parsed and validated into `{ owner, repo }` (SSRF boundary — visitor input
-  is never fetched).
-- Fetches repository metadata, languages, and README through the
-  server-owned `PublicRepositoryProvider` interface (native server `fetch`,
-  fixed `api.github.com` base, optional server-only `GITHUB_TOKEN`).
-- Renders a read-only snapshot: identity, status, counts, dates, license,
-  topics, language distribution, README excerpt — direct facts only.
-- Honest typed failure states: not-found-or-inaccessible; rate-limited on
-  reliable 403/429 markers with GitHub-provided retry timing when available;
-  timeout; upstream unavailability; configuration problems; malformed
-  responses.
-- Fixture-backed deterministic tests for parser, provider, and UI; no test
-  depends on live GitHub.
-- Success-only, normalized snapshot caching for about five minutes with a
-  visible freshness disclosure; transient and access failures are not cached
-  as snapshot values.
-
-### Phase 1B — Public activity and evidence records ✅ (implemented)
-
-- Separate server-only activity provider for a page-one sample: commits 20,
-  pull requests 20, issue-endpoint records 20 (PR markers removed), releases
-  10, and workflow runs 20.
-- Product-owned Fact records with stable GitHub-based evidence IDs, canonical
-  links, runtime-validated fields, and bounded safe text. Commit emails and
-  multiline bodies are not retained.
-- Maximum eight GETs for a full uncached repository page, at most two
-  concurrent activity requests, no retries, no pagination following, and no
-  complete-history claim.
-- Independent activity availability plus a separate ~5-minute cache for only
-  fully available normalized activity; partial results remain visible and
-  uncached.
-- Deterministic sampled summaries: workflow conclusions (success denominator
-  is all completed fetched runs), median interval for at least three published
-  non-draft releases, standalone issue states, and PR states (merged only when
-  `merged_at` is supplied).
-- Unified factual timeline capped at 30 records; no scoring, ranking,
-  productivity, reliability, or quality interpretation.
-- No milestone generation, no case-study generation, no AI summaries, no
-  contributor rankings, no repository scoring.
-
-## Phase 2 — Identity, persistence, and GitHub App connection
-
-- Better Auth accounts and user-owned workspaces.
-- PostgreSQL + Prisma as the system of record.
-- GitHub App installation with selected-repository, read-only permissions.
-- Installation-token handling (encrypted at rest, never logged).
-- Account export and deletion, shipped with the first persistent user data.
-- Persistent tracked repositories and sync state.
-
-## Phase 3 — Continuous ingestion and the evidence graph
-
-- Webhook ingestion with raw-body signature verification and delivery-ID
-  deduplication.
-- Idempotent, resumable sync jobs (re-running a sync is a no-op on
-  unchanged data).
-- Evidence linking UI: pin facts, files, and doc sections to claims.
-- Deterministic derivations over real facts (language evolution, CI pass
-  rates, release cadence) with recomputability guarantees; coverage rules
-  promoted from the Phase 0 demo implementation.
-
-## Phase 4 — Drafting and review workflow
-
-- Grounded AI provider boundary: drafts generated only from collected
-  evidence, mechanically rejected if they cite unknown evidence IDs.
-- Full review workflow: draft → needs-evidence → verified, with edit and
-  reject paths. Everything stays private.
-
-## Phase 5 — Publishing
-
-- Public project pages and timelines rendering **published** claims only,
-  each claim with its evidence trail.
-- Case study, CV bullet, and interview-story exports.
-
-## Phase 6 — Hardening and sustainability
-
-- Private repository support (still read-only), rate-limit resilience,
-  operational observability (with redacting logs).
-- Licensing decision executed before public v1. Billing evaluated here at
-  the earliest.
-
-## Explicit non-goals (any phase)
-
-Developer ranking or scoring, seniority inference, productivity metrics from
-commit counts, burnout estimation, code execution, GitHub write access,
-auto-published AI output.
+GitHub write access, source-code execution, developer ranking/scoring,
+seniority or productivity inference, burnout estimation, and automatic
+publication.

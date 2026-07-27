@@ -9,6 +9,7 @@ import type {
   PublicRepositoryActivity,
 } from "@/lib/github/activity-types";
 import { getPrisma } from "@/lib/db/prisma";
+import { persistEvidenceRecords } from "@/lib/repositories/evidence-persistence";
 
 const STALE_AFTER_MS = 15 * 60 * 1000;
 
@@ -132,45 +133,14 @@ export async function synchronizeTrackedRepository(input: {
           fetchedAt: new Date(snapshot.fetchedAt),
         },
       });
-      for (const record of records) {
-        const existing = await tx.repositoryEvidence.findUnique({
-          where: {
-            trackedRepositoryId_evidenceId: {
-              trackedRepositoryId: repository.id,
-              evidenceId: record.evidenceId,
-            },
-          },
-          select: { id: true },
-        });
-        await tx.repositoryEvidence.upsert({
-          where: {
-            trackedRepositoryId_evidenceId: {
-              trackedRepositoryId: repository.id,
-              evidenceId: record.evidenceId,
-            },
-          },
-          create: {
-            trackedRepositoryId: repository.id,
-            evidenceId: record.evidenceId,
-            evidenceType: record.evidenceType,
-            githubSourceId: record.sourceIdentifier,
-            canonicalUrl: record.sourceUrl,
-            occurredAt: new Date(record.occurredAt),
-            title: record.title,
-            factualPayload: json(record),
-          },
-          update: {
-            githubSourceId: record.sourceIdentifier,
-            canonicalUrl: record.sourceUrl,
-            occurredAt: new Date(record.occurredAt),
-            title: record.title,
-            factualPayload: json(record),
-            lastSeenAt: new Date(),
-          },
-        });
-        if (existing) updated += 1;
-        else inserted += 1;
-      }
+      const persisted = await persistEvidenceRecords({
+        tx,
+        trackedRepositoryId: repository.id,
+        records,
+        source: { kind: "MANUAL_SYNC", syncRunId: run.id },
+      });
+      inserted = persisted.inserted;
+      updated = persisted.updated;
       const status = partial ? "PARTIAL" : "SUCCEEDED";
       await tx.repositorySyncRun.update({
         where: { id: run.id },

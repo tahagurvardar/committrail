@@ -1,6 +1,8 @@
 import {
   ACTIVITY_LIMITS,
+  type ActivityEvidence,
   type ActivitySection,
+  type ActivitySourceKind,
   type PublicRepositoryActivity,
   type RepositoryActivityContext,
 } from "@/lib/github/activity-types";
@@ -137,6 +139,79 @@ export class GitHubRestPublicRepositoryActivityProvider implements PublicReposit
       releases,
       workflowRuns,
     };
+  }
+
+  async getRepositoryActivitySource(
+    repository: RepositoryIdentifier,
+    context: RepositoryActivityContext,
+    source: ActivitySourceKind,
+  ): Promise<ActivitySection<ActivityEvidence>> {
+    const defaultBranch = safePublicText(context.defaultBranch, 150);
+    if (defaultBranch === null || defaultBranch !== context.defaultBranch) {
+      throw new PublicRepositoryProviderError(
+        "malformed-response",
+        "GitHub returned an invalid default branch.",
+      );
+    }
+    switch (source) {
+      case "commits":
+        return this.loadSection(
+          repositoryApiPath(repository, "/commits"),
+          {
+            sha: defaultBranch,
+            per_page: String(ACTIVITY_LIMITS.commits),
+            page: "1",
+          },
+          ACTIVITY_LIMITS.commits,
+          (raw) => mapCommitResponse(raw, repository),
+        );
+      case "pullRequests":
+        return this.loadSection(
+          repositoryApiPath(repository, "/pulls"),
+          {
+            state: "all",
+            sort: "updated",
+            direction: "desc",
+            per_page: String(ACTIVITY_LIMITS.pullRequests),
+            page: "1",
+          },
+          ACTIVITY_LIMITS.pullRequests,
+          (raw) => mapPullRequestResponse(raw, repository),
+        );
+      case "issues":
+        return this.loadSection(
+          repositoryApiPath(repository, "/issues"),
+          {
+            state: "all",
+            sort: "updated",
+            direction: "desc",
+            per_page: String(ACTIVITY_LIMITS.issues),
+            page: "1",
+          },
+          ACTIVITY_LIMITS.issues,
+          (raw) => mapIssueResponse(raw, repository),
+        );
+      case "releases":
+        return this.loadSection(
+          repositoryApiPath(repository, "/releases"),
+          {
+            per_page: String(ACTIVITY_LIMITS.releases),
+            page: "1",
+          },
+          ACTIVITY_LIMITS.releases,
+          (raw) => mapReleaseResponse(raw, repository),
+        );
+      case "workflowRuns":
+        return this.loadSection(
+          repositoryApiPath(repository, "/actions/runs"),
+          {
+            per_page: String(ACTIVITY_LIMITS.workflowRuns),
+            page: "1",
+          },
+          ACTIVITY_LIMITS.workflowRuns,
+          (raw) => mapWorkflowRunResponse(raw, repository),
+        );
+    }
   }
 
   private async loadSection<T>(

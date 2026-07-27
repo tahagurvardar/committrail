@@ -27,6 +27,8 @@
     "db:validate": "prisma validate",
     "db:studio": "prisma studio",
     "db:test:prepare": "node scripts/prepare-test-database.mjs",
+    "worker:ingestion": "tsx scripts/ingestion-worker.ts",
+    "worker:ingestion:once": "tsx scripts/ingestion-worker.ts --once",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
@@ -67,6 +69,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "prisma": "^7.9.1",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5",
     "vitest": "^4.1.10"
   }

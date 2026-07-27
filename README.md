@@ -1,17 +1,21 @@
 # CommitTrail
 
-> **Status: Phase 2 — identity, persistence, and verified GitHub App connection.**
+> **Status: Phase 3 — verified webhook ingestion and the human-reviewed evidence graph.**
 > The account-free explorer remains available. Users can create a private
 > personal workspace, verify a read-only GitHub App installation, track public
 > or private repositories, persist bounded normalized evidence, synchronize
-> manually, export data, disconnect locally, and delete the account. There are
-> no webhooks, background jobs, claims, ranking, deployment, or AI.
+> manually, receive verified GitHub App webhooks, process durable targeted
+> jobs, inspect provenance, and create private human-authored claims. There is
+> no ranking, deployment, public publishing, or AI.
 
-Phase 2 uses PostgreSQL 17, Prisma ORM 7.9.1 with the `pg` driver adapter,
+Phase 3 uses PostgreSQL 17, Prisma ORM 7.9.1 with the `pg` driver adapter,
 Better Auth 1.6.25 with database sessions, and JOSE 6.2.4 for short-lived
 RS256 GitHub App JWTs. See [local database setup](docs/local-database.md),
 [GitHub App setup](docs/github-app-setup.md), and the
-[account data lifecycle](docs/account-data-lifecycle.md).
+[account data lifecycle](docs/account-data-lifecycle.md),
+[webhook ingestion](docs/webhook-ingestion.md), the
+[ingestion worker](docs/ingestion-worker.md), and
+[evidence claims](docs/evidence-claims.md).
 
 **Turn GitHub history into evidence-backed engineering stories.**
 
@@ -35,7 +39,7 @@ productivity. See [docs/methodology.md](docs/methodology.md) and
 | `/repositories/[owner]/[repo]` | Real snapshot plus bounded recent public activity evidence               |
 | `/demo`                        | Deterministic synthetic full-product preview (fictional data, labeled)   |
 | `/login`, `/register`          | Better Auth email/password identity; no email delivery                   |
-| `/dashboard/*`                 | Private personal workspace and persisted repository evidence             |
+| `/dashboard/*`                 | Private delivery/job health, evidence, claims, and graph                 |
 | `/about`                       | Product purpose, what it is / is not, trust principles                   |
 | `/methodology`                 | Facts → evidence → claims → user approval, states, boundaries            |
 | `*`                            | Custom not-found page                                                    |
@@ -55,6 +59,7 @@ distinguished so real facts are never confused with the fictional preview.
 - [Playwright](https://playwright.dev) configuration prepared for later
   browser tests
 - ESLint + Prettier, GitHub Actions CI on Node 22
+- PostgreSQL-backed ingestion worker executed with `tsx`; no external queue
 - No GitHub SDK: all eight bounded REST requests use native server-side
   `fetch`
 
@@ -137,22 +142,28 @@ npm ci
 npm run dev
 ```
 
-Open <http://localhost:3000>. No environment variables are required.
+The public explorer still needs no account or secret. Private Phase 3 work
+requires PostgreSQL and the Phase 2 auth/App variables; webhook intake also
+requires `GITHUB_WEBHOOK_SECRET`.
 
 ## Scripts
 
-| Script                 | What it does                              |
-| ---------------------- | ----------------------------------------- |
-| `npm run dev`          | Start the development server              |
-| `npm run build`        | Production build                          |
-| `npm run start`        | Serve the production build                |
-| `npm run lint`         | ESLint                                    |
-| `npm run typecheck`    | TypeScript, no emit                       |
-| `npm run format`       | Prettier, write                           |
-| `npm run format:check` | Prettier, check only                      |
-| `npm test`             | Unit/component tests, single run          |
-| `npm run test:watch`   | Tests in watch mode                       |
-| `npm run test:e2e`     | Playwright smoke tests (see prerequisite) |
+| Script                          | What it does                                      |
+| ------------------------------- | ------------------------------------------------- |
+| `npm run dev`                   | Start the development server                      |
+| `npm run build`                 | Production build                                  |
+| `npm run start`                 | Serve the production build                        |
+| `npm run lint`                  | ESLint                                            |
+| `npm run typecheck`             | TypeScript, no emit                               |
+| `npm run format`                | Prettier, write                                   |
+| `npm run format:check`          | Prettier, check only                              |
+| `npm test`                      | Unit/component tests, single run                  |
+| `npm run test:watch`            | Tests in watch mode                               |
+| `npm run test:e2e`              | Playwright smoke tests (see prerequisite)         |
+| `npm run worker:ingestion`      | Run the durable ingestion worker                  |
+| `npm run worker:ingestion:once` | Process one bounded ingestion batch               |
+| `npm run db:test:prepare`       | Deploy migrations to the disposable test database |
+| `npm run test:integration`      | PostgreSQL integration and queue tests            |
 
 Browser tests are not part of CI. To run them locally once:
 `npx playwright install chromium`, then `npm run test:e2e`.
@@ -168,11 +179,11 @@ failure state. Demo fixtures remain pinned by exact-value tests.
 
 ## Architecture direction
 
-A single Next.js application. Implemented now: the server-only public
-repository provider boundary. Reserved, not implemented: PostgreSQL +
-Prisma, Better Auth, a read-only GitHub App, verified webhook ingestion,
-idempotent sync jobs, the evidence graph, publishing, and a grounded
-AI-drafting provider boundary. Details:
+A single Next.js application with the public provider boundary, Better Auth,
+Prisma/PostgreSQL, a read-only GitHub App, verified minimal-envelope webhook
+intake, durable targeted jobs, append-only observations, and a private
+human-reviewed claim/evidence graph. Publishing and grounded drafting remain
+deferred. Details:
 [docs/architecture.md](docs/architecture.md).
 
 Documentation index:
@@ -184,7 +195,7 @@ Documentation index:
 - [docs/methodology.md](docs/methodology.md) — evidence, claims, and approval
 - [docs/decisions/](docs/decisions) — architecture decision records
 
-## Current limitations (Phase 1B)
+## Current limitations (Phase 3)
 
 - Activity is a page-one recent sample, not complete history: 20 commits, 20
   pull requests, 20 issue-endpoint records before PR filtering, 10 releases,
@@ -195,8 +206,10 @@ Documentation index:
   `Retry-After` or reset timing only when GitHub supplies it, and otherwise
   says to try later without inventing a time.
 - The `/demo` dashboard remains fully synthetic and clearly labeled.
-- No accounts, private repositories, persistence, GitHub App, webhooks,
-  background jobs, AI drafting, billing, or deployment.
+- Webhook workers are explicit local/server processes; there is no scheduler,
+  hosted queue, polling, or automatic redelivery.
+- Claims are private and human-authored. There is no AI drafting, public
+  profile, publishing, billing, team collaboration, or deployment.
 - Playwright is configured but browser tests are opt-in and not in CI.
 - `npm audit` reports advisories confined to the ESLint dev toolchain;
   the runtime audit (`npm audit --omit=dev`) is clean.

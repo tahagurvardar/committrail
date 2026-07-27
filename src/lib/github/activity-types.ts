@@ -11,6 +11,9 @@ export const ACTIVITY_LIMITS = {
 export type EvidenceType =
   "commit" | "pull-request" | "issue" | "release" | "workflow-run";
 
+export type ActivitySourceKind =
+  "commits" | "pullRequests" | "issues" | "releases" | "workflowRuns";
+
 export interface EvidenceRecordBase {
   evidenceId: string;
   evidenceType: EvidenceType;
