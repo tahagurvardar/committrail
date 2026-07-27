@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import { AppFooter } from "@/components/app-footer";
 
 describe("AppFooter", () => {
-  it("uses the Phase 1A status without stale Phase 0 labeling", () => {
+  it("uses the Phase 1B status without stale Phase 0 labeling", () => {
     render(<AppFooter />);
-    expect(screen.getByText("Phase 1A snapshot")).toBeInTheDocument();
+    expect(screen.getByText("Phase 1B activity evidence")).toBeInTheDocument();
     expect(screen.queryByText(/phase 0 preview/i)).not.toBeInTheDocument();
   });
 

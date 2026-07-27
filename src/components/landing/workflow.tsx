@@ -59,9 +59,9 @@ export function Workflow() {
           ))}
         </ol>
         <p className="mt-6 font-mono text-xs text-muted-foreground">
-          Phase 1A note: CommitTrail can now snapshot public repositories,
-          read-only. The later pipeline stages are previewed with synthetic data
-          in the demo.
+          Phase 1B note: CommitTrail can now read bounded public repository
+          facts and recent activity evidence. Later pipeline stages remain a
+          synthetic demo.
         </p>
       </div>
     </section>

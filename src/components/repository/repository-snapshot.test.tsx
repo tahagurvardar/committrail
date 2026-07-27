@@ -157,7 +157,9 @@ describe("RepositorySnapshot", () => {
 
   it("distinguishes the live snapshot from the synthetic demo", () => {
     render(<RepositorySnapshot snapshot={makeSnapshot()} />);
-    expect(screen.getByText(/live phase 1a snapshot/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/live public repository evidence/i),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /synthetic demo/i }),
     ).toHaveAttribute("href", "/demo");

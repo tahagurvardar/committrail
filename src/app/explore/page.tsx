@@ -10,7 +10,7 @@ import { parseRepositoryInput } from "@/lib/github/parse-repository-input";
 export const metadata: Metadata = {
   title: "Explore a public repository",
   description:
-    "Fetch a read-only snapshot of any public GitHub repository — no account, no installation, no write access.",
+    "Fetch a read-only snapshot and bounded recent activity evidence for any public GitHub repository.",
 };
 
 const EXAMPLES = [
@@ -51,8 +51,9 @@ export default async function ExplorePage({
         </h1>
         <p className="mt-4 leading-relaxed text-muted-foreground">
           Enter any public GitHub repository and CommitTrail fetches a read-only
-          snapshot of its metadata, languages, and README — real data, clearly
-          separated from the synthetic demo.
+          snapshot of its metadata, languages, README, and bounded recent
+          activity evidence—real data, clearly separated from the synthetic
+          demo.
         </p>
       </div>
 
@@ -106,18 +107,20 @@ export default async function ExplorePage({
               <code className="font-mono">.git</code> is fine).
             </li>
             <li>
-              Without an optional server token, snapshots use GitHub’s shared
+              Without an optional server token, requests use GitHub’s shared
               anonymous rate limit. If GitHub rate-limits the site, the page
               reports only the retry timing GitHub actually provides — nothing
               is fabricated.
             </li>
             <li>
-              Snapshots are cached briefly, so data may be delayed by a few
-              minutes.
+              Fully available snapshots and activity are cached briefly, so data
+              may be delayed by a few minutes. Partial activity failures are not
+              cached.
             </li>
             <li>
-              Phase 1A scope: metadata, languages, and README. Activity evidence
-              (commits, pull requests, releases, CI) arrives in Phase 1B.
+              Phase 1B scope adds page-one samples of commits, pull requests,
+              standalone issues, published releases, and workflow runs. It is
+              not complete history and never measures productivity or quality.
             </li>
           </ul>
         </div>

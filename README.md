@@ -3,22 +3,22 @@
 **Turn GitHub history into evidence-backed engineering stories.**
 
 CommitTrail is an evidence-first engineering timeline and portfolio
-intelligence platform. It reads repository facts — and, in later phases,
-commits, pull requests, releases, workflow runs, and selected files — and
-helps developers turn them into reviewed project milestones and case studies
-where **every technical claim links to concrete evidence**.
+intelligence platform. It reads repository facts and bounded recent activity,
+then—only in later phases—will help developers turn reviewed evidence into
+project milestones and case studies where **every technical claim links to
+concrete evidence**.
 
 CommitTrail is deliberately _not_ a statistics dashboard. It never ranks
 developers, never infers seniority, and never treats commit counts as
 productivity. See [docs/methodology.md](docs/methodology.md) and
 [ADR 0003](docs/decisions/0003-no-developer-ranking.md).
 
-> **Status: Phase 1A — public repository snapshot.** Visitors can fetch a
-> read-only snapshot (metadata, languages, README) of any public GitHub
-> repository — no account, no installation, no write access. Everything
-> beyond that scope is previewed with clearly labeled synthetic data. There
-> is still **no authentication, no database, no background jobs, no AI
-> provider, and no deployment**.
+> **Status: Phase 1B — public repository activity and evidence records.**
+> Visitors can fetch repository metadata, languages, a safe README excerpt,
+> and bounded recent commits, pull requests, standalone issues, published
+> releases, and workflow runs—no account, installation, or write access.
+> Milestones and publishing remain a labeled synthetic preview. There is still
+> **no authentication, database, background job, AI provider, or deployment**.
 
 ## What exists today
 
@@ -26,7 +26,7 @@ productivity. See [docs/methodology.md](docs/methodology.md) and
 | ------------------------------ | ------------------------------------------------------------------------ |
 | `/`                            | Public landing page: problem, workflow, evidence graph, trust principles |
 | `/explore`                     | Enter a public repository (`owner/repo` or github.com URL) — live data   |
-| `/repositories/[owner]/[repo]` | Read-only real snapshot: metadata, languages, README (Phase 1A scope)    |
+| `/repositories/[owner]/[repo]` | Real snapshot plus bounded recent public activity evidence               |
 | `/demo`                        | Deterministic synthetic full-product preview (fictional data, labeled)   |
 | `/about`                       | Product purpose, what it is / is not, trust principles                   |
 | `/methodology`                 | Facts → evidence → claims → user approval, states, boundaries            |
@@ -47,10 +47,10 @@ distinguished so real facts are never confused with the fictional preview.
 - [Playwright](https://playwright.dev) configuration prepared for later
   browser tests
 - ESLint + Prettier, GitHub Actions CI on Node 22
-- No GitHub SDK: the three Phase 1A REST endpoints use the native
-  server-side `fetch`
+- No GitHub SDK: all eight bounded REST requests use native server-side
+  `fetch`
 
-## The Phase 1A data boundary
+## The Phase 1 public-data boundary
 
 - **Server-only provider.** All GitHub access lives behind
   `PublicRepositoryProvider` (`src/lib/github/`). UI components never call
@@ -59,8 +59,9 @@ distinguished so real facts are never confused with the fictional preview.
   `{ owner, repo }` (`parse-repository-input.ts`); requests are constructed
   only against the fixed `https://api.github.com` base. Submitted URLs are
   never fetched.
-- **Read-only.** Only GET requests, only public-data endpoints: repository
-  metadata, languages, README.
+- **Read-only.** Only GET requests to repository metadata, languages, README,
+  commits, pulls, issues, releases, and Actions runs. No detail, diff, comment,
+  job, log, artifact, asset, or second-page fetches.
 - **Untrusted README handling.** Base64 content is size-capped, decoded, and
   reduced to an escaped plain-text excerpt — no raw repository HTML is ever
   rendered.
@@ -69,14 +70,46 @@ distinguished so real facts are never confused with the fictional preview.
   it), timeout, upstream unavailability, configuration problems, and
   malformed responses. A GitHub 404 is presented as "not found or not
   publicly accessible" — never a guess about which.
-- **Bounded requests.** 10-second timeout, no automatic retries, at most
-  three individually bounded requests per snapshot (the final two run in
-  parallel).
-- **Caching.** Only successfully normalized snapshots enter a ~5-minute
-  server data cache. Upstream GETs are otherwise uncached, and invalid input,
-  access failures, rate limits, timeouts, and malformed responses are never
-  stored as snapshot values. The UI states that data may be delayed by a few
-  minutes.
+- **Bounded requests.** 10-second timeout and no retry. An uncached full page
+  costs at most eight requests: metadata first; languages and README; then one
+  page each of commits (20), pull requests (20), issues (20), releases (10),
+  and workflow runs (20). Activity concurrency never exceeds two. Successful
+  JSON bodies are capped at 2 MiB before parsing; error bodies at 8 KiB.
+- **Pagination.** Only page 1 is requested. A safely parsed GitHub `Link`
+  header can set `hasMore`; its URLs are never followed or exposed.
+- **Runtime validation and privacy.** Raw GitHub response shapes stop at the
+  provider boundary. Commit email and multiline bodies, issue/release bodies,
+  and raw payloads are not retained. Unsafe public text is control-stripped,
+  whitespace-normalized, bounded, and rendered as escaped text.
+- **Partial availability.** Each activity source is independently available or
+  unavailable. A local rate limit, timeout, malformed response, or unsupported
+  endpoint does not erase the repository snapshot or other sources. Pull
+  requests returned by the issue endpoint are removed.
+- **Caching.** Successfully normalized snapshots and fully available activity
+  use separate ~5-minute server caches. Partial activity deliberately bypasses
+  caching so transient failures are not frozen. Keys contain normalized
+  repository identity and no token.
+
+## Activity evidence and deterministic summaries
+
+Every activity item is a product-owned fact record with a stable ID such as
+`github:commit:{sha}` or `github:workflow-run:{databaseId}`, a canonical
+GitHub link, occurrence time, bounded title, source label, and Fact
+confidence. The unified timeline shows at most 30 records from the fetched
+windows and never claims complete history.
+
+The only real-data derivations are transparent arithmetic:
+
+- workflow outcomes count completed/successful/failed-like/other and queued or
+  in-progress runs; any success percentage uses all completed runs in the
+  fetched window as its denominator;
+- release interval is the median elapsed days between adjacent published,
+  non-draft releases, only with at least three valid releases;
+- issue and pull-request summaries count states only inside their recently
+  returned samples; a PR is “merged” only when GitHub supplies `merged_at`.
+
+These are not quality, productivity, maturity, reliability, or developer
+performance measures. There are no scores or rankings.
 
 ### Optional `GITHUB_TOKEN`
 
@@ -88,7 +121,7 @@ never stored — see [.env.example](.env.example).
 
 ## Getting started
 
-Requires Node.js 20.9+ (Node 22 recommended — CI runs on 22; see
+Requires Node.js 22 (CI runs on 22 with npm 10; see
 [.nvmrc](.nvmrc)) and npm.
 
 ```bash
@@ -143,17 +176,19 @@ Documentation index:
 - [docs/methodology.md](docs/methodology.md) — evidence, claims, and approval
 - [docs/decisions/](docs/decisions) — architecture decision records
 
-## Current limitations (Phase 1A)
+## Current limitations (Phase 1B)
 
-- Snapshot scope is metadata, languages, and README only. Commit, pull
-  request, issue, release, and workflow-run ingestion is Phase 1B and is
-  never fabricated in the meantime.
+- Activity is a page-one recent sample, not complete history: 20 commits, 20
+  pull requests, 20 issue-endpoint records before PR filtering, 10 releases,
+  and 20 workflow runs. There is no load-more or cursor persistence.
+- Workflow jobs/logs, commit/PR diffs, reviews, comments, source files, release
+  assets, archives, and contributor analysis are not fetched.
 - Anonymous GitHub rate limits are shared and small; the UI reports
   `Retry-After` or reset timing only when GitHub supplies it, and otherwise
   says to try later without inventing a time.
 - The `/demo` dashboard remains fully synthetic and clearly labeled.
-- No accounts, no persistence, no background jobs, no AI drafting, no
-  billing, no deployment.
+- No accounts, private repositories, persistence, GitHub App, webhooks,
+  background jobs, AI drafting, billing, or deployment.
 - Playwright is configured but browser tests are opt-in and not in CI.
 - `npm audit` reports advisories confined to the ESLint dev toolchain;
   the runtime audit (`npm audit --omit=dev`) is clean.

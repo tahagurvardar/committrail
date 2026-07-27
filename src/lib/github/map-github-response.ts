@@ -278,7 +278,7 @@ export function mapRepositorySnapshot(input: {
 
   const isPrivate = expectBoolean(metadata.private, "private");
   if (isPrivate) {
-    // Phase 1A never renders private repositories, regardless of token scope.
+    // Phase 1 never renders private repositories, regardless of token scope.
     throw new PublicRepositoryProviderError(
       "not-found",
       "Repository not found or not publicly accessible.",
