@@ -1,5 +1,11 @@
-import { syncRepositoryAction } from "@/app/dashboard/actions";
+import Link from "next/link";
+import {
+  retryDeadIngestionJobAction,
+  syncRepositoryAction,
+} from "@/app/dashboard/actions";
 import { getAuthorizedTrackedRepository } from "@/lib/auth/authorization";
+import { getPrisma } from "@/lib/db/prisma";
+import { getWebhookConfiguration } from "@/lib/webhooks/config";
 
 export default async function TrackedRepositoryPage({
   params,
@@ -9,6 +15,25 @@ export default async function TrackedRepositoryPage({
   const { trackedRepositoryId } = await params;
   const { repository } =
     await getAuthorizedTrackedRepository(trackedRepositoryId);
+  const [claimCount, observationCount, deliveries, jobs] = await Promise.all([
+    getPrisma().evidenceClaim.count({
+      where: { trackedRepositoryId: repository.id },
+    }),
+    getPrisma().evidenceObservation.count({
+      where: { repositoryEvidence: { trackedRepositoryId: repository.id } },
+    }),
+    getPrisma().webhookDelivery.findMany({
+      where: { trackedRepositoryId: repository.id },
+      orderBy: { receivedAt: "desc" },
+      take: 10,
+    }),
+    getPrisma().ingestionJob.findMany({
+      where: { trackedRepositoryId: repository.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
+  const webhook = getWebhookConfiguration();
   const snapshot = repository.snapshot?.normalizedData as
     Record<string, unknown> | undefined;
   const identity = snapshot?.identity as Record<string, unknown> | undefined;
@@ -23,6 +48,9 @@ export default async function TrackedRepositoryPage({
           <p className="mt-2 text-sm text-muted-foreground">
             {repository.visibility} · {repository.trackingStatus.toLowerCase()}{" "}
             · bounded recent samples
+            {repository.installation?.suspendedAt
+              ? " · installation suspended"
+              : ""}
           </p>
         </div>
         <form action={syncRepositoryAction}>
@@ -54,6 +82,23 @@ export default async function TrackedRepositoryPage({
           <p className="mt-2 font-medium">{repository.evidence.length} shown</p>
         </article>
       </div>
+      <nav
+        aria-label="Repository evidence and claims"
+        className="mt-6 flex flex-wrap gap-3"
+      >
+        <Link
+          href={`/dashboard/repositories/${repository.id}/evidence`}
+          className="rounded-md border px-4 py-2 text-sm font-medium"
+        >
+          Evidence library · {repository.evidence.length} shown
+        </Link>
+        <Link
+          href={`/dashboard/repositories/${repository.id}/claims`}
+          className="rounded-md border px-4 py-2 text-sm font-medium"
+        >
+          Claims · {claimCount}
+        </Link>
+      </nav>
       {snapshot && (
         <article className="mt-8 rounded-xl border bg-card p-5">
           <h2 className="text-xl font-semibold">Snapshot facts</h2>
@@ -128,6 +173,116 @@ export default async function TrackedRepositoryPage({
           </li>
         ))}
       </ul>
+      <h2 className="mt-10 text-xl font-semibold">
+        Webhook and ingestion health
+      </h2>
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <article className="rounded-xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Webhook secret</p>
+          <p className="mt-2 font-medium">
+            {webhook.configured ? "Configured" : "Not configured"}
+          </p>
+        </article>
+        <article className="rounded-xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Recent deliveries</p>
+          <p className="mt-2 font-medium">{deliveries.length}</p>
+        </article>
+        <article className="rounded-xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Evidence observations</p>
+          <p className="mt-2 font-medium">{observationCount}</p>
+        </article>
+      </div>
+      <p className="mt-4 text-sm text-muted-foreground">
+        Manual <strong>Sync now</strong> remains the recovery path for missed or
+        failed webhook deliveries.
+      </p>
+      <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
+        <table className="w-full min-w-160 text-left text-sm">
+          <caption className="sr-only">
+            Latest verified GitHub webhook deliveries
+          </caption>
+          <thead className="border-b text-xs text-muted-foreground">
+            <tr>
+              <th className="p-3">Event</th>
+              <th className="p-3">Action</th>
+              <th className="p-3">State</th>
+              <th className="p-3">Duplicates</th>
+              <th className="p-3">Received</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {deliveries.map((delivery) => (
+              <tr key={delivery.id}>
+                <td className="p-3">{delivery.eventName}</td>
+                <td className="p-3">{delivery.action ?? "—"}</td>
+                <td className="p-3">
+                  {delivery.status}
+                  {delivery.ignoredReason ? ` · ${delivery.ignoredReason}` : ""}
+                </td>
+                <td className="p-3">{delivery.duplicateCount}</td>
+                <td className="p-3">
+                  <time dateTime={delivery.receivedAt.toISOString()}>
+                    {delivery.receivedAt.toLocaleString()}
+                  </time>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!deliveries.length && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          No verified deliveries for this repository yet.
+        </p>
+      )}
+      <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
+        <table className="w-full min-w-160 text-left text-sm">
+          <caption className="sr-only">Recent webhook ingestion jobs</caption>
+          <thead className="border-b text-xs text-muted-foreground">
+            <tr>
+              <th className="p-3">Kind</th>
+              <th className="p-3">State</th>
+              <th className="p-3">Attempts</th>
+              <th className="p-3">Last error</th>
+              <th className="p-3">Recovery</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {jobs.map((job) => (
+              <tr key={job.id}>
+                <td className="p-3">{job.kind}</td>
+                <td className="p-3">{job.status}</td>
+                <td className="p-3">
+                  {job.attemptCount}/{job.maximumAttempts}
+                </td>
+                <td className="p-3">{job.sanitizedLastErrorCode ?? "None"}</td>
+                <td className="p-3">
+                  {job.status === "DEAD" ? (
+                    <form action={retryDeadIngestionJobAction}>
+                      <input
+                        type="hidden"
+                        name="trackedRepositoryId"
+                        value={repository.id}
+                      />
+                      <input type="hidden" name="jobId" value={job.id} />
+                      <button className="rounded-md border px-3 py-1.5 text-xs">
+                        Create safe retry
+                      </button>
+                    </form>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!jobs.length && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          No webhook ingestion jobs yet.
+        </p>
+      )}
     </section>
   );
 }

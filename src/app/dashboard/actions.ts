@@ -1,5 +1,6 @@
 "use server";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -91,6 +92,58 @@ export async function syncRepositoryAction(formData: FormData) {
     mode: "MANUAL",
   });
   revalidatePath(`/dashboard/repositories/${id}`);
+}
+
+export async function retryDeadIngestionJobAction(formData: FormData) {
+  const repositoryId = String(formData.get("trackedRepositoryId") ?? "");
+  const jobId = String(formData.get("jobId") ?? "");
+  const { repository, workspace, session } =
+    await getAuthorizedTrackedRepository(repositoryId);
+  const prisma = getPrisma();
+  const dead = await prisma.ingestionJob.findFirst({
+    where: {
+      id: jobId,
+      workspaceId: workspace.id,
+      trackedRepositoryId: repository.id,
+      status: "DEAD",
+    },
+  });
+  if (!dead) throw new Error("INGESTION_JOB_NOT_FOUND");
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${dead.deduplicationKey}))`;
+    const active = await tx.ingestionJob.findFirst({
+      where: {
+        deduplicationKey: dead.deduplicationKey,
+        status: { in: ["PENDING", "RUNNING"] },
+      },
+    });
+    if (active) throw new Error("INGESTION_JOB_ALREADY_ACTIVE");
+    await tx.ingestionJob.create({
+      data: {
+        workspaceId: workspace.id,
+        trackedRepositoryId: repository.id,
+        githubInstallationId: dead.githubInstallationId,
+        kind: dead.kind,
+        deduplicationKey: dead.deduplicationKey,
+        minimalPayload: JSON.parse(
+          JSON.stringify(dead.minimalPayload),
+        ) as Prisma.InputJsonValue,
+        maximumAttempts: dead.maximumAttempts,
+      },
+    });
+    await tx.auditEvent.create({
+      data: {
+        workspaceId: workspace.id,
+        userId: session.user.id,
+        type: "ingestion.dead_job.retried",
+        metadata: {
+          historicalJobId: dead.id,
+          trackedRepositoryId: repository.id,
+        },
+      },
+    });
+  });
+  revalidatePath(`/dashboard/repositories/${repository.id}`);
 }
 
 export async function disconnectGitHubAction(formData: FormData) {
