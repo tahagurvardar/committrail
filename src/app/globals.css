@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * CommitTrail design tokens.
+ *
+ * Raw values live on :root / .dark; the @theme block maps them to Tailwind
+ * utilities (bg-background, text-muted-foreground, stroke-rail, …).
+ * Light mode is warm paper + ink; dark mode is deep blue-ink. A single
+ * verdigris-teal accent carries the brand; state colors are reserved for
+ * evidence, confidence, and review semantics.
+ */
+:root {
+  --background: oklch(0.991 0.003 95);
+  --foreground: oklch(0.25 0.015 258);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.015 258);
+  --surface: oklch(0.972 0.004 95);
+  --muted: oklch(0.955 0.005 95);
+  --muted-foreground: oklch(0.49 0.014 253);
+  --accent: oklch(0.955 0.009 190);
+  --accent-foreground: oklch(0.3 0.04 195);
+  --primary: oklch(0.51 0.088 186);
+  --primary-foreground: oklch(0.99 0.003 95);
+  --border: oklch(0.905 0.006 95);
+  --input: oklch(0.905 0.006 95);
+  --ring: oklch(0.51 0.088 186);
+  --rail: oklch(0.865 0.008 95);
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: oklch(0.19 0.014 255);
+  --foreground: oklch(0.93 0.006 95);
+  --card: oklch(0.227 0.015 255);
+  --card-foreground: oklch(0.93 0.006 95);
+  --surface: oklch(0.213 0.014 255);
+  --muted: oklch(0.259 0.016 255);
+  --muted-foreground: oklch(0.712 0.014 255);
+  --accent: oklch(0.278 0.026 200);
+  --accent-foreground: oklch(0.883 0.046 185);
+  --primary: oklch(0.773 0.109 182);
+  --primary-foreground: oklch(0.17 0.014 255);
+  --border: oklch(0.313 0.017 255);
+  --input: oklch(0.313 0.017 255);
+  --ring: oklch(0.773 0.109 182);
+  --rail: oklch(0.353 0.017 255);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-rail: var(--rail);
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas,
+    monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary) 24%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Dotted backdrop used behind the hero — the "evidence trail" motif. */
+  .trail-dots {
+    background-image: radial-gradient(
+      circle,
+      var(--rail) 1px,
+      transparent 1.4px
+    );
+    background-size: 22px 22px;
+    mask-image: radial-gradient(
+      ellipse 75% 68% at 50% 0%,
+      black 35%,
+      transparent 80%
+    );
+  }
+}
+
+@utility animate-rise {
+  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

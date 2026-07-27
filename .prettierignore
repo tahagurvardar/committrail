@@ -1,0 +1,13 @@
+# Build output and generated files
+.next/
+out/
+build/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+next-env.d.ts
+package-lock.json
+
+# Local tooling state
+.claude/

@@ -1,0 +1,3 @@
+# Normalize all text files to LF so Prettier and CI see identical content on
+# every platform.
+* text=auto eol=lf
