@@ -1,6 +1,6 @@
 # CommitTrail — Product Specification
 
-_Phase 0 revision._
+_Phase 1A revision._
 
 ## One-line definition
 
@@ -94,16 +94,31 @@ CommitTrail must not:
 These boundaries appear in product copy (landing, about, methodology) and are
 treated as requirements in review.
 
-## Phase 0 scope
+## Implemented scope
 
-**In:** landing page, synthetic demo dashboard, about, methodology,
-not-found; design system (tokens, dark mode, accessibility); typed demo
-domain model with deterministic fixtures and derivations; documentation; unit
-and component tests; CI; Playwright preparation.
+**Phase 0 (done):** landing page, synthetic demo dashboard, about,
+methodology, not-found; design system (tokens, dark mode, accessibility);
+typed demo domain model with deterministic fixtures and derivations;
+documentation; unit and component tests; CI; Playwright preparation.
 
-**Out (explicitly):** GitHub authentication and APIs, GitHub Apps, webhooks,
+**Phase 1A (done):** public repository input (`/explore`) accepting
+`owner/repository` and github.com URL forms with strict validation (the
+SSRF boundary); a server-only `PublicRepositoryProvider` interface with a
+GitHub REST implementation (metadata, languages, README — native fetch,
+fixed API base, optional server-only `GITHUB_TOKEN`); a read-only snapshot
+route (`/repositories/[owner]/[repo]`) showing direct facts with the Fact
+confidence treatment; honest typed failure states (not-found-or-
+inaccessible, rate-limited with GitHub-provided retry timing when available,
+timeout, upstream unavailable, configuration, malformed response);
+success-only ~5-minute normalized snapshot caching with a visible freshness
+disclosure; fixture-backed deterministic tests throughout.
+
+**Out (explicitly, still):** GitHub authentication, GitHub Apps, webhooks,
 PostgreSQL/Prisma, background jobs, external AI providers, billing, private
-repositories, deployment.
+repositories, deployment — and all Phase 1B activity ingestion (commits,
+pull requests, issues, releases, workflow runs, contributor data, scoring,
+milestone or case-study generation, AI summaries). The snapshot UI labels
+deferred capabilities as later phases and never fabricates them.
 
 ## Demo requirements (implemented)
 

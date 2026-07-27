@@ -59,8 +59,9 @@ export function Workflow() {
           ))}
         </ol>
         <p className="mt-6 font-mono text-xs text-muted-foreground">
-          Phase 0 note: no GitHub connection exists yet — the demo runs this
-          pipeline over synthetic data.
+          Phase 1A note: CommitTrail can now snapshot public repositories,
+          read-only. The later pipeline stages are previewed with synthetic data
+          in the demo.
         </p>
       </div>
     </section>

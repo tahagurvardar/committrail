@@ -17,3 +17,36 @@ export function formatDate(isoDate: string): string {
 export function formatCount(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
 }
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "UTC",
+});
+
+/** Formats a full ISO timestamp for display, pinned to UTC. */
+export function formatDateTime(isoTimestamp: string): string {
+  const parsed = new Date(isoTimestamp);
+  if (Number.isNaN(parsed.getTime())) {
+    return isoTimestamp;
+  }
+  return `${dateTimeFormatter.format(parsed)} UTC`;
+}
+
+/** Formats an ISO date or timestamp as a date, tolerating both shapes. */
+export function formatDateFlexible(isoValue: string): string {
+  const parsed = new Date(isoValue);
+  if (Number.isNaN(parsed.getTime())) {
+    return isoValue;
+  }
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(parsed);
+}

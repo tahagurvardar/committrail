@@ -82,8 +82,13 @@ treat commit counts as productivity, estimate burnout, execute repository
 code, request GitHub write access, publish AI output automatically, or state
 technical claims without evidence.
 
-## Phase 0 status
+## Phase status
 
-The pipeline is demonstrated with deterministic synthetic fixtures
-(`src/lib/demo/`). Tests assert the fixtures exercise every state and that
-the coverage math matches what the UI displays.
+Phase 1A implements the first pipeline stage for real data: read-only public
+repository snapshots (`/explore` → `/repositories/[owner]/[repo]`) showing
+**direct facts only** — metadata, language bytes, README presence and
+excerpt — with no interpretation attached. Later stages (activity evidence,
+derived metrics, drafting, review, publishing) remain demonstrated with
+deterministic synthetic fixtures (`src/lib/demo/`), clearly labeled as
+fictional. Tests assert the fixtures exercise every state and that the
+coverage math matches what the UI displays.

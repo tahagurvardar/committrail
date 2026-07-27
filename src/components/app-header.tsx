@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ExternalLinkIcon, LogoMark } from "@/components/icons";
+import { ArrowRightIcon, LogoMark } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { siteConfig } from "@/lib/site";
 
@@ -18,16 +18,13 @@ export function AppHeader() {
 
         <div className="flex items-center gap-2 sm:order-last">
           <ThemeToggle />
-          <button
-            type="button"
-            aria-disabled="true"
-            title="GitHub connection ships in a later phase"
-            className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-muted-foreground opacity-70"
+          <Link
+            href="/explore"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium transition-colors hover:bg-accent"
           >
-            <ExternalLinkIcon className="size-4" />
-            GitHub
-            <span className="sr-only">(unavailable in Phase 0)</span>
-          </button>
+            Explore a repository
+            <ArrowRightIcon className="size-4" />
+          </Link>
         </div>
 
         <nav aria-label="Main" className="w-full sm:w-auto">

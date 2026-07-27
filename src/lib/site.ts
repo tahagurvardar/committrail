@@ -3,10 +3,11 @@ export const siteConfig = {
   tagline: "Turn GitHub history into evidence-backed engineering stories.",
   description:
     "CommitTrail reads the repository history you already have — commits, pull requests, releases, and CI runs — and helps you turn it into reviewed, evidence-linked engineering milestones and case studies.",
-  /** Expected home of this repository. Not linked in the app during Phase 0. */
+  /** Public home of this repository. */
   repositoryUrl: "https://github.com/tahagurvardar/committrail",
-  phaseLabel: "Phase 0 · Product foundation",
+  phaseLabel: "Phase 1A · Public repository snapshot",
   nav: [
+    { label: "Explore", href: "/explore" },
     { label: "Product", href: "/about" },
     { label: "Methodology", href: "/methodology" },
     { label: "Demo", href: "/demo" },
