@@ -35,7 +35,7 @@ productivity. See [docs/methodology.md](docs/methodology.md) and
 | `/repositories/[owner]/[repo]` | Real snapshot plus bounded recent public activity evidence               |
 | `/demo`                        | Deterministic synthetic full-product preview (fictional data, labeled)   |
 | `/login`, `/register`          | Better Auth email/password identity; no email delivery                   |
-| `/dashboard/*`                 | Private personal workspace and persisted repository evidence            |
+| `/dashboard/*`                 | Private personal workspace and persisted repository evidence             |
 | `/about`                       | Product purpose, what it is / is not, trust principles                   |
 | `/methodology`                 | Facts → evidence → claims → user approval, states, boundaries            |
 | `*`                            | Custom not-found page                                                    |
