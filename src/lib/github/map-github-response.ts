@@ -272,12 +272,13 @@ export function mapRepositorySnapshot(input: {
   readme: unknown;
   fetchedAt: string;
   rateLimit: RateLimitInfo | null;
+  allowPrivate?: boolean;
 }): PublicRepositorySnapshot {
   const metadata = expectRecord(input.metadata, "repository");
   const ownerRecord = expectRecord(metadata.owner, "owner");
 
   const isPrivate = expectBoolean(metadata.private, "private");
-  if (isPrivate) {
+  if (isPrivate && !input.allowPrivate) {
     // Phase 1 never renders private repositories, regardless of token scope.
     throw new PublicRepositoryProviderError(
       "not-found",
@@ -314,7 +315,7 @@ export function mapRepositorySnapshot(input: {
     },
     description: optionalString(metadata.description),
     ownerAvatarUrl: safeAvatarUrl(ownerRecord.avatar_url),
-    isPrivate: false,
+    isPrivate,
     defaultBranch: expectString(metadata.default_branch, "default_branch"),
     archived: expectBoolean(metadata.archived, "archived"),
     fork: expectBoolean(metadata.fork, "fork"),

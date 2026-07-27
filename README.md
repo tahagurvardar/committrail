@@ -1,5 +1,18 @@
 # CommitTrail
 
+> **Status: Phase 2 — identity, persistence, and verified GitHub App connection.**
+> The account-free explorer remains available. Users can create a private
+> personal workspace, verify a read-only GitHub App installation, track public
+> or private repositories, persist bounded normalized evidence, synchronize
+> manually, export data, disconnect locally, and delete the account. There are
+> no webhooks, background jobs, claims, ranking, deployment, or AI.
+
+Phase 2 uses PostgreSQL 17, Prisma ORM 7.9.1 with the `pg` driver adapter,
+Better Auth 1.6.25 with database sessions, and JOSE 6.2.4 for short-lived
+RS256 GitHub App JWTs. See [local database setup](docs/local-database.md),
+[GitHub App setup](docs/github-app-setup.md), and the
+[account data lifecycle](docs/account-data-lifecycle.md).
+
 **Turn GitHub history into evidence-backed engineering stories.**
 
 CommitTrail is an evidence-first engineering timeline and portfolio
@@ -13,13 +26,6 @@ developers, never infers seniority, and never treats commit counts as
 productivity. See [docs/methodology.md](docs/methodology.md) and
 [ADR 0003](docs/decisions/0003-no-developer-ranking.md).
 
-> **Status: Phase 1B — public repository activity and evidence records.**
-> Visitors can fetch repository metadata, languages, a safe README excerpt,
-> and bounded recent commits, pull requests, standalone issues, published
-> releases, and workflow runs—no account, installation, or write access.
-> Milestones and publishing remain a labeled synthetic preview. There is still
-> **no authentication, database, background job, AI provider, or deployment**.
-
 ## What exists today
 
 | Route                          | Purpose                                                                  |
@@ -28,6 +34,8 @@ productivity. See [docs/methodology.md](docs/methodology.md) and
 | `/explore`                     | Enter a public repository (`owner/repo` or github.com URL) — live data   |
 | `/repositories/[owner]/[repo]` | Real snapshot plus bounded recent public activity evidence               |
 | `/demo`                        | Deterministic synthetic full-product preview (fictional data, labeled)   |
+| `/login`, `/register`          | Better Auth email/password identity; no email delivery                   |
+| `/dashboard/*`                 | Private personal workspace and persisted repository evidence             |
 | `/about`                       | Product purpose, what it is / is not, trust principles                   |
 | `/methodology`                 | Facts → evidence → claims → user approval, states, boundaries            |
 | `*`                            | Custom not-found page                                                    |

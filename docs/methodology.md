@@ -1,6 +1,12 @@
 # CommitTrail — Methodology
 
 The user-facing version of this document lives at `/methodology` in the app.
+
+Phase 2 persists the same normalized factual records for a verified personal
+workspace. Manual synchronization upserts stable evidence IDs, updates
+last-seen timestamps, preserves evidence outside later bounded windows, and
+keeps prior snapshots when a sync fails. Persistence does not turn samples
+into complete history, scores, productivity signals, or project claims.
 This file is the canonical specification behind it.
 
 ## Why a methodology at all

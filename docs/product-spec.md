@@ -1,6 +1,14 @@
 # CommitTrail — Product Specification
 
-_Phase 1B revision._
+_Phase 2 revision._
+
+Phase 2 retains the account-free public explorer and adds Better Auth
+email/password identity, database sessions, a personal workspace, verified
+read-only GitHub App connection, bounded selected-repository discovery,
+persisted public/private normalized evidence, manual idempotent sync,
+versioned export, local disconnect, and account deletion. Email delivery,
+webhooks, background jobs, claims, publishing, teams, billing, and AI remain
+out of scope.
 
 ## One-line definition
 

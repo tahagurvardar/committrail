@@ -333,6 +333,20 @@ describe("GitHubRestPublicRepositoryProvider — failure paths", () => {
     );
   });
 
+  it("maps a private repository only for an explicit server-owned installation context", async () => {
+    const handlers = happyHandlers();
+    handlers["/repos/acme/rocket"] = json({
+      ...repositoryFixture(),
+      private: true,
+    });
+    const { impl } = makeFetch(handlers);
+    const snapshot = await new GitHubRestPublicRepositoryProvider({
+      fetchImpl: impl,
+      allowPrivate: true,
+    }).getRepositorySnapshot(IDENTIFIER);
+    expect(snapshot.isPrivate).toBe(true);
+  });
+
   it("maps an exhausted 403 to rate-limited with the reset time", async () => {
     const { impl } = makeFetch({
       "/repos/acme/rocket": json(

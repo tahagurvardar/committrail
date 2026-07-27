@@ -56,7 +56,7 @@ export interface PublicRepositorySnapshot {
   description: string | null;
   ownerAvatarUrl: string | null;
   /** Always false in Phase 1 — private repositories are never shown. */
-  isPrivate: false;
+  isPrivate: boolean;
   defaultBranch: string;
   archived: boolean;
   fork: boolean;

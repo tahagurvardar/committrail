@@ -18,6 +18,8 @@
 
 # production
 /build
+/src/generated/prisma/
+/postgres-data/
 
 # misc
 .DS_Store

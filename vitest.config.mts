@@ -6,6 +6,10 @@ export default defineConfig({
   resolve: {
     // Resolve the tsconfig "@/*" alias natively.
     tsconfigPaths: true,
+    alias: {
+      "server-only": new URL("./vitest.server-only.ts", import.meta.url)
+        .pathname,
+    },
   },
   test: {
     environment: "jsdom",

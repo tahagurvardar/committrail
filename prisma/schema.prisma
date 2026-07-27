@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum WorkspaceRole {
+  OWNER
+  MEMBER
+}
+
+enum GitHubConnectionStage {
+  INSTALLATION
+  AUTHORIZATION
+}
+
+enum RepositorySelection {
+  ALL
+  SELECTED
+}
+
+enum RepositorySource {
+  PUBLIC
+  INSTALLATION
+}
+
+enum TrackingStatus {
+  ACTIVE
+  DISCONNECTED
+}
+
+enum SyncMode {
+  INITIAL
+  MANUAL
+}
+
+enum SyncStatus {
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  ownedWorkspace Workspace? @relation("WorkspaceOwner")
+  memberships   WorkspaceMember[]
+  connectionAttempts GitHubConnectionAttempt[]
+  initiatedSyncRuns RepositorySyncRun[]
+  auditEvents   AuditEvent[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([identifier])
+}
+
+model Workspace {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  ownerUserId  String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  owner        User     @relation("WorkspaceOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  members      WorkspaceMember[]
+  connectionAttempts GitHubConnectionAttempt[]
+  installations GitHubInstallation[]
+  trackedRepositories TrackedRepository[]
+  auditEvents  AuditEvent[]
+}
+
+model WorkspaceMember {
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, userId])
+  @@index([userId])
+}
+
+model GitHubConnectionAttempt {
+  id                    String @id @default(cuid())
+  workspaceId           String
+  initiatingUserId      String
+  stage                 GitHubConnectionStage
+  stateHash             String @unique
+  encryptedPkceVerifier String?
+  pendingInstallationId BigInt?
+  expiresAt             DateTime
+  consumedAt            DateTime?
+  createdAt             DateTime @default(now())
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  initiatingUser        User @relation(fields: [initiatingUserId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, expiresAt])
+  @@index([initiatingUserId])
+}
+
+model GitHubInstallation {
+  id                    String @id @default(cuid())
+  workspaceId           String
+  installationId        BigInt @unique
+  accountId             BigInt
+  accountLogin          String
+  accountType           String
+  repositorySelection   RepositorySelection
+  permissions           Json
+  suspendedAt           DateTime?
+  verifiedAt            DateTime
+  lastRepositoryDiscoveryAt DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  repositories          TrackedRepository[]
+
+  @@index([workspaceId])
+}
+
+model TrackedRepository {
+  id                    String @id @default(cuid())
+  workspaceId           String
+  githubInstallationId  String?
+  githubRepositoryId    BigInt
+  ownerLogin            String
+  name                  String
+  fullName              String
+  visibility            String
+  defaultBranch         String
+  archived              Boolean @default(false)
+  fork                  Boolean @default(false)
+  sourceType            RepositorySource
+  trackingStatus        TrackingStatus @default(ACTIVE)
+  lastSuccessfulSyncAt  DateTime?
+  latestSyncStatus      SyncStatus?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  installation          GitHubInstallation? @relation(fields: [githubInstallationId], references: [id], onDelete: Cascade)
+  snapshot              RepositorySnapshot?
+  evidence              RepositoryEvidence[]
+  syncRuns              RepositorySyncRun[]
+
+  @@unique([workspaceId, githubRepositoryId])
+  @@index([githubInstallationId])
+}
+
+model RepositorySnapshot {
+  id                    String @id @default(cuid())
+  trackedRepositoryId   String @unique
+  normalizedData        Json
+  sourceUpdatedAt       DateTime
+  sourcePushedAt        DateTime?
+  fetchedAt             DateTime
+  schemaVersion         Int @default(1)
+  trackedRepository     TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+}
+
+model RepositoryEvidence {
+  id                    String @id @default(cuid())
+  trackedRepositoryId   String
+  evidenceId            String
+  evidenceType          String
+  githubSourceId        String
+  canonicalUrl          String
+  occurredAt            DateTime
+  title                 String
+  sourceLabel           String @default("GitHub")
+  confidence            String @default("fact")
+  factualPayload        Json
+  firstSeenAt           DateTime @default(now())
+  lastSeenAt            DateTime @default(now())
+  trackedRepository     TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([trackedRepositoryId, evidenceId])
+  @@index([trackedRepositoryId, occurredAt])
+}
+
+model RepositorySyncRun {
+  id                    String @id @default(cuid())
+  trackedRepositoryId   String
+  initiatingUserId      String
+  mode                  SyncMode
+  status                SyncStatus
+  startedAt             DateTime @default(now())
+  completedAt           DateTime?
+  sanitizedErrorCode    String?
+  insertedCount         Int @default(0)
+  updatedCount          Int @default(0)
+  seenCount             Int @default(0)
+  sectionAvailability   Json?
+  createdAt             DateTime @default(now())
+  trackedRepository     TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  initiatingUser        User @relation(fields: [initiatingUserId], references: [id], onDelete: Cascade)
+
+  @@index([trackedRepositoryId, status, createdAt])
+  @@index([initiatingUserId])
+}
+
+model AuditEvent {
+  id          String @id @default(cuid())
+  workspaceId String?
+  userId      String?
+  type        String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([userId, createdAt])
+}

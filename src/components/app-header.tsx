@@ -19,6 +19,12 @@ export function AppHeader() {
         <div className="flex items-center gap-2 sm:order-last">
           <ThemeToggle />
           <Link
+            href="/login"
+            className="inline-flex h-9 items-center rounded-md px-3 text-sm font-medium hover:bg-accent"
+          >
+            Sign in
+          </Link>
+          <Link
             href="/explore"
             className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium transition-colors hover:bg-accent"
           >
