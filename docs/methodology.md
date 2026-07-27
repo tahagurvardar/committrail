@@ -12,12 +12,12 @@ and to bind the product to it.
 
 ## Vocabulary
 
-| Term           | Definition                                                                                        |
-| -------------- | ------------------------------------------------------------------------------------------------- |
-| Fact           | A record read directly from a repository, stored with stable identifiers, never edited.           |
-| Evidence       | A fact, file, or doc section linked to a claim as support. A reference, not a copy.               |
-| Derived metric | A number computed from facts by a reproducible rule — same input, same output, no model involved. |
-| Claim          | A human-readable statement carrying a confidence state, a review state, and evidence links.       |
+| Term           | Definition                                                                                                       |
+| -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Fact           | A record read directly from a repository and represented with a stable identifier; Phase 1B does not persist it. |
+| Evidence       | A fact, file, or doc section linked to a claim as support. A reference, not a copy.                              |
+| Derived metric | A number computed from facts by a reproducible rule — same input, same output, no model involved.                |
+| Claim          | A human-readable statement carrying a confidence state, a review state, and evidence links.                      |
 
 ## The pipeline and its guarantees
 
@@ -63,17 +63,21 @@ links at least **2** independent evidence records
 (`COVERAGE_MIN_EVIDENCE` in `src/lib/demo/derive.ts`). Coverage percentages
 shown in the product are derived from this rule and recomputable.
 
-## Evidence types and what they prove
+## Evidence types and what the current record can establish
 
-| Type           | Proves                                                         |
-| -------------- | -------------------------------------------------------------- |
-| `commit`       | A change exists; when it landed; who authored it               |
-| `pull-request` | Scope, review discussion, merge date of a unit of work         |
-| `issue`        | The problem, constraints, and decision context                 |
-| `release`      | The work shipped in a tagged version                           |
-| `workflow-run` | CI/benchmark results — the source for quality/perf figures     |
-| `file`         | Contents at a specific revision (benchmarks, fixtures, config) |
-| `doc-section`  | Intent and rationale (ADRs, RFCs, changelogs)                  |
+| Type           | Current Phase 1B fact boundary                                             |
+| -------------- | -------------------------------------------------------------------------- |
+| `commit`       | A SHA, first message line, commit time, source link, and safe author label |
+| `pull-request` | List-record state/dates/branches; merged only with a supplied merged time  |
+| `issue`        | Standalone issue list-record state, labels, comment count, and dates       |
+| `release`      | Published tag/name, dates, prerelease/immutable flags, and asset count     |
+| `workflow-run` | A workflow run’s event, status, conclusion, branch/SHA, and dates          |
+| `file`         | Deferred; no source file is fetched in Phase 1B                            |
+| `doc-section`  | Deferred; README is only a bounded plain-text snapshot excerpt             |
+
+A workflow run is not automatically a test run. A PR list record does not
+establish review quality or discussion. An issue title does not establish
+full decision context. Release and commit bodies are not collected.
 
 ## Hard boundaries
 
@@ -84,11 +88,23 @@ technical claims without evidence.
 
 ## Phase status
 
-Phase 1A implements the first pipeline stage for real data: read-only public
-repository snapshots (`/explore` → `/repositories/[owner]/[repo]`) showing
-**direct facts only** — metadata, language bytes, README presence and
-excerpt — with no interpretation attached. Later stages (activity evidence,
-derived metrics, drafting, review, publishing) remain demonstrated with
-deterministic synthetic fixtures (`src/lib/demo/`), clearly labeled as
-fictional. Tests assert the fixtures exercise every state and that the
-coverage math matches what the UI displays.
+Phases 1A and 1B implement the first pipeline stage for real data:
+`/explore` → `/repositories/[owner]/[repo]` shows metadata, language bytes, a
+safe README excerpt, and product-owned Fact records from bounded page-one
+activity windows. Stable evidence-candidate IDs use full commit SHA or GitHub
+database ID, but nothing is persisted.
+
+The only interpretation is explicit deterministic arithmetic over those
+windows:
+
+- workflow success is successful completed runs divided by **all** completed
+  fetched runs; failed-like, other completed, and queued/in-progress counts
+  remain separate;
+- release interval is the median elapsed days between adjacent published,
+  non-draft records, and requires at least three;
+- issue and PR state counts describe only their fetched samples.
+
+Every summary carries sample size, definition, source type, Deterministic
+confidence, and limitation wording. Record windows are never described as
+complete history; counts are never productivity or quality signals. Drafting,
+review, persistence, and publishing remain synthetic/deferred.

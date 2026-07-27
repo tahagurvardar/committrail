@@ -5,7 +5,7 @@ export const siteConfig = {
     "CommitTrail reads the repository history you already have — commits, pull requests, releases, and CI runs — and helps you turn it into reviewed, evidence-linked engineering milestones and case studies.",
   /** Public home of this repository. */
   repositoryUrl: "https://github.com/tahagurvardar/committrail",
-  phaseLabel: "Phase 1A · Public repository snapshot",
+  phaseLabel: "Phase 1B · Public activity evidence",
   nav: [
     { label: "Explore", href: "/explore" },
     { label: "Product", href: "/about" },

@@ -31,8 +31,9 @@ function FactRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 /**
- * Read-only Phase 1A snapshot of a public repository. Everything shown is a
- * direct GitHub fact — no scoring, no inferred quality, no activity data yet.
+ * Read-only Phase 1 snapshot of a public repository. Everything shown is a
+ * direct GitHub fact—no scoring or inferred quality. Activity is rendered by
+ * the separate Phase 1B component.
  */
 export function RepositorySnapshot({
   snapshot,
@@ -124,12 +125,11 @@ export function RepositorySnapshot({
 
         <p className="mt-5 rounded-lg border border-border bg-surface px-4 py-3 text-sm leading-relaxed text-muted-foreground">
           <strong className="font-medium text-foreground">
-            Live Phase 1A snapshot.
+            Live public repository evidence.
           </strong>{" "}
-          Real public GitHub data, limited to repository metadata, languages,
-          and README. Activity evidence — commits, pull requests, releases, CI
-          runs — arrives in Phase 1B and is never fabricated here. The full
-          future product is previewed in the{" "}
+          Real public GitHub data: repository metadata, languages, a safe README
+          excerpt, and bounded recent activity evidence. The full future product
+          is previewed in the{" "}
           <Link
             href="/demo"
             className="text-primary underline underline-offset-2"

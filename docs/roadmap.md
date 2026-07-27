@@ -39,12 +39,26 @@ the GitHub App installation flow appears here.
   visible freshness disclosure; transient and access failures are not cached
   as snapshot values.
 
-### Phase 1B — Public activity ingestion (pending)
+### Phase 1B — Public activity and evidence records ✅ (implemented)
 
-- Commit, pull request, issue, release, and workflow-run ingestion for the
-  snapshot view — still public-data, read-only, account-free.
-- First deterministic derivations over real activity (e.g. release cadence,
-  CI pass rates) with recomputability guarantees.
+- Separate server-only activity provider for a page-one sample: commits 20,
+  pull requests 20, issue-endpoint records 20 (PR markers removed), releases
+  10, and workflow runs 20.
+- Product-owned Fact records with stable GitHub-based evidence IDs, canonical
+  links, runtime-validated fields, and bounded safe text. Commit emails and
+  multiline bodies are not retained.
+- Maximum eight GETs for a full uncached repository page, at most two
+  concurrent activity requests, no retries, no pagination following, and no
+  complete-history claim.
+- Independent activity availability plus a separate ~5-minute cache for only
+  fully available normalized activity; partial results remain visible and
+  uncached.
+- Deterministic sampled summaries: workflow conclusions (success denominator
+  is all completed fetched runs), median interval for at least three published
+  non-draft releases, standalone issue states, and PR states (merged only when
+  `merged_at` is supplied).
+- Unified factual timeline capped at 30 records; no scoring, ranking,
+  productivity, reliability, or quality interpretation.
 - No milestone generation, no case-study generation, no AI summaries, no
   contributor rankings, no repository scoring.
 

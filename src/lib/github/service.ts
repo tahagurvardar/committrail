@@ -1,4 +1,6 @@
 import { GitHubRestPublicRepositoryProvider } from "@/lib/github/github-rest-public-repository-provider";
+import { GitHubRestPublicRepositoryActivityProvider } from "@/lib/github/github-rest-public-repository-activity-provider";
+import type { PublicRepositoryActivityProvider } from "@/lib/github/public-repository-activity-provider";
 import type { PublicRepositoryProvider } from "@/lib/github/public-repository-provider";
 
 /**
@@ -10,6 +12,12 @@ import type { PublicRepositoryProvider } from "@/lib/github/public-repository-pr
  */
 export function getPublicRepositoryProvider(): PublicRepositoryProvider {
   return new GitHubRestPublicRepositoryProvider({
+    token: process.env.GITHUB_TOKEN,
+  });
+}
+
+export function getPublicRepositoryActivityProvider(): PublicRepositoryActivityProvider {
+  return new GitHubRestPublicRepositoryActivityProvider({
     token: process.env.GITHUB_TOKEN,
   });
 }

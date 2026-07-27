@@ -1,5 +1,5 @@
 /**
- * Product-owned domain types for the Phase 1A public repository snapshot.
+ * Product-owned domain types for the Phase 1 public repository snapshot.
  *
  * Raw GitHub payload shapes stop at the provider boundary
  * (map-github-response.ts); everything the UI touches is defined here.
@@ -55,7 +55,7 @@ export interface PublicRepositorySnapshot {
   };
   description: string | null;
   ownerAvatarUrl: string | null;
-  /** Always false in Phase 1A — private repositories are never shown. */
+  /** Always false in Phase 1 — private repositories are never shown. */
   isPrivate: false;
   defaultBranch: string;
   archived: boolean;

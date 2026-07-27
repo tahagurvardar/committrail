@@ -50,10 +50,10 @@ describe("landing page", () => {
     }
   });
 
-  it("discloses the Phase 1A live-snapshot scope honestly", () => {
+  it("discloses the Phase 1B bounded public-data scope honestly", () => {
     render(<HomePage />);
     expect(
-      screen.getByText(/snapshot public repositories,\s*read-only/i),
+      screen.getByText(/bounded public repository facts and recent activity/i),
     ).toBeInTheDocument();
   });
 });

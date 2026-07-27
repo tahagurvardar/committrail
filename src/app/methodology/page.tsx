@@ -27,7 +27,7 @@ const VOCABULARY = [
   {
     term: "Fact",
     definition:
-      "A record read directly from a repository: a commit, a merged pull request, a release, a workflow run. Facts are stored with stable identifiers and never edited.",
+      "A record read directly from a repository: a commit, pull request, standalone issue, release, or workflow run. Phase 1B represents facts with stable identifiers but does not persist them.",
   },
   {
     term: "Evidence",
@@ -60,7 +60,7 @@ const PIPELINE = [
   },
   {
     name: "Metrics are derived deterministically",
-    body: "Language evolution, release cadence, CI pass rates, and similar figures are computed by plain reproducible rules over the evidence store.",
+    body: "Phase 1B computes only transparent sampled arithmetic: workflow conclusion counts, published-release intervals, and issue/PR state counts.",
     guarantee: "Any derived number can be recomputed from its inputs.",
   },
   {
@@ -82,7 +82,7 @@ const CONFIDENCE_EXPLANATIONS: Record<
 > = {
   fact: "Stated directly by repository records. Example: “v1.0.0 was released on March 11, 2025.”",
   deterministic:
-    "Computed by a reproducible rule over facts. Example: “CI pass rate over the last 30 runs is 93%.”",
+    "Computed by a reproducible rule over facts. Example: “7 of 10 completed workflow runs in the fetched window concluded successfully.”",
   "ai-draft":
     "Proposed by an assistive model from the evidence at hand. It stays visibly labeled until a person verifies it — and it can only be published after review.",
 };
@@ -100,13 +100,15 @@ const REVIEW_EXPLANATIONS: Record<(typeof REVIEW_STATES)[number], string> = {
 
 const EVIDENCE_EXPLANATIONS: Record<(typeof EVIDENCE_TYPES)[number], string> = {
   commit:
-    "Points at a specific SHA — proof that a change exists and when it landed.",
+    "Points at a specific SHA and records its first message line and commit time.",
   "pull-request":
-    "Shows scope, review discussion, and merge date for a unit of work.",
-  issue: "Documents the problem, constraints, and decision context.",
-  release: "Anchors a claim to a shipped, tagged version.",
+    "Records list-response state and dates; merged only when GitHub supplies a merged time. Reviews are not fetched.",
+  issue:
+    "Records a standalone issue title, state, labels, dates, and comment count. The body and comments are not fetched.",
+  release:
+    "Records a published tag/name and dates without fetching its body or assets.",
   "workflow-run":
-    "CI and benchmark runs — the strongest source for performance and quality figures.",
+    "Records a workflow run’s event, status, conclusion, branch/SHA, and dates. It is not automatically a test run.",
   file: "A file at a specific revision, such as a benchmark definition or fixture corpus.",
   "doc-section":
     "A section of documentation — an ADR, RFC, or changelog entry that explains intent.",
@@ -296,13 +298,13 @@ export default function MethodologyPage() {
 
       <p className="mt-16 max-w-2xl rounded-xl border border-border bg-surface p-6 text-sm leading-relaxed text-muted-foreground">
         <strong className="font-medium text-foreground">
-          Phase 1A status:
+          Phase 1B status:
         </strong>{" "}
-        the first pipeline stage is live — read-only public repository snapshots
-        showing direct facts only. Activity ingestion, the evidence graph,
-        drafting, and publishing arrive in later phases and are demonstrated
-        with synthetic data until then — see the roadmap in the repository
-        documentation.
+        the first pipeline stage is live—read-only public repository snapshots
+        plus bounded activity Fact records and transparent sampled arithmetic.
+        Persistence, the evidence graph, drafting, review, and publishing remain
+        later phases and are demonstrated with synthetic data—see the roadmap in
+        the repository documentation.
       </p>
     </div>
   );

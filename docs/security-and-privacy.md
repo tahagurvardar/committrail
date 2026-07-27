@@ -1,16 +1,17 @@
 # CommitTrail — Security and Privacy
 
-_Phase 1A revision. This document states the commitments the implementation
+_Phase 1B revision. This document states the commitments the implementation
 is held to. Where a mechanism is future work, it is marked with the phase
 that introduces it._
 
-## Phase 1A posture (today)
+## Phase 1B posture (today)
 
 - No accounts, no cookies beyond the locally stored theme preference, no
   analytics, no database.
 - The only runtime network access is **server-side, read-only GET requests
   to `https://api.github.com`** for public repository data (metadata,
-  languages, README). Browsers never call GitHub.
+  languages, README, commits, pulls, issues, releases, workflow runs).
+  Browsers never call GitHub.
 - **SSRF boundary:** visitor input is never fetched. It is parsed and
   validated into `{ owner, repo }` (strict GitHub name grammar; non-GitHub
   hosts, credentials, ports, query strings, traversal-like and encoded
@@ -27,13 +28,27 @@ that introduces it._
   `dangerouslySetInnerHTML`, no embedded scripts/iframes/remote content.
   External links from API data (homepage, README URL) are validated to
   http(s) and rendered with `rel="noopener noreferrer"`.
-- **Bounded networking:** 10 s request timeout, no automatic retries, no
-  tight rate-limit retry loops. Error paths never log upstream bodies or
-  authorization headers.
-- **Caching:** only successfully normalized public snapshot data is cached
-  (about five minutes), keyed by normalized owner/repository. Provider GETs
-  themselves are uncached; invalid input and every typed failure remain
-  uncached. Tokens never enter cache arguments, keys, or values.
+- **Allow-listed endpoints:** the shared client accepts repository metadata
+  and only the seven explicit suffixes used by Phases 1A/1B. It constructs
+  URLs on the fixed base and issues only GET. No visitor URL, Link-header URL,
+  archive, asset, workflow log, job, diff, or source file is fetched.
+- **Bounded networking:** 10 s per request, no automatic retries, at most
+  eight GETs for an uncached full page and at most two concurrent activity
+  requests. Successful JSON bodies are capped at 2 MiB before parsing and
+  error bodies at 8 KiB. Only page 1 is requested. Link metadata is reduced
+  to a safe `hasMore` boolean and never followed or exposed.
+- **External response privacy:** runtime mappers retain no commit email,
+  multiline commit body, issue/release body, raw response, release asset
+  location, workflow log, or authorization material. Public text is
+  control-stripped, whitespace-normalized, length-bounded, and escaped.
+- **Partial failure isolation:** source-local rate limits, timeout, upstream
+  failure, malformed response, and unsupported state remain explicit local
+  unavailable states. They are never fabricated as successful empty data.
+- **Caching:** only successfully normalized snapshots and fully available
+  activity are cached (separately, about five minutes). Partial activity is
+  returned but deliberately bypasses caching. Provider GETs, invalid input,
+  typed failures, and unavailable sections remain uncached. Tokens never
+  enter cache arguments, keys, values, errors, or logs.
 - The demo contains only fictional, hand-written data: no real personal
   data, emails, tokens, or production information.
 - The build requires no secrets; CI runs without any.

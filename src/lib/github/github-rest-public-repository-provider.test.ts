@@ -293,6 +293,19 @@ describe("GitHubRestPublicRepositoryProvider — success paths", () => {
   });
 });
 
+describe("snapshot dependency ordering", () => {
+  it("does not request dependent endpoints when repository metadata fails", async () => {
+    const fetchImpl = vi.fn(
+      async () => new Response("unavailable", { status: 500 }),
+    );
+
+    await expect(
+      provider(fetchImpl).getRepositorySnapshot(IDENTIFIER),
+    ).rejects.toMatchObject({ code: "upstream-unavailable" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("GitHubRestPublicRepositoryProvider — failure paths", () => {
   it("maps a repository 404 to not-found with honest wording", async () => {
     const { impl } = makeFetch({

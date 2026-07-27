@@ -96,13 +96,14 @@ export default function AboutPage() {
       <div className="mt-16 max-w-2xl rounded-xl border border-border bg-surface p-6">
         <h2 className="font-semibold tracking-tight">Current status</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Phase 1A — public repository snapshots. {siteConfig.name} can fetch a
-          read-only snapshot of any public GitHub repository (metadata,
-          languages, README), and the full future product remains previewed with
-          synthetic data in the demo. There is still no account system, no
-          persistence, and no deployment. Licensing will be decided before the
-          public v1 release. {siteConfig.name} is an independent project, not
-          affiliated with GitHub, Inc.
+          Phase 1B—public repository activity evidence. {siteConfig.name} can
+          fetch a read-only snapshot plus bounded recent commits, pull requests,
+          standalone issues, published releases, and workflow runs. The full
+          future product remains previewed with synthetic data in the demo.
+          There is still no account system, persistence, AI integration, or
+          deployment. Licensing will be decided before the public v1 release.{" "}
+          {siteConfig.name} is an independent project, not affiliated with
+          GitHub, Inc.
         </p>
       </div>
     </div>

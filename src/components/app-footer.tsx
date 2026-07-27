@@ -42,9 +42,9 @@ export function AppFooter() {
             Status
           </p>
           <p className="mt-3 max-w-xs leading-relaxed text-muted-foreground">
-            Phase 1A — live read-only snapshots of public repositories, plus the
-            synthetic full-product demo. No accounts, no data persistence, no
-            deployment yet.
+            Phase 1B—live read-only snapshots and bounded recent public activity
+            evidence, plus the synthetic full-product demo. No accounts,
+            persistence, AI integration, or deployment.
           </p>
           <a
             href={siteConfig.repositoryUrl}
@@ -67,7 +67,7 @@ export function AppFooter() {
             CommitTrail is an independent project and is not affiliated with,
             endorsed by, or sponsored by GitHub, Inc.
           </p>
-          <p className="font-mono">Phase 1A snapshot</p>
+          <p className="font-mono">Phase 1B activity evidence</p>
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 # CommitTrail — Product Specification
 
-_Phase 1A revision._
+_Phase 1B revision._
 
 ## One-line definition
 
@@ -50,11 +50,12 @@ Each arrow narrows what the next stage may do:
 ## Domain vocabulary
 
 - **Fact** — a record read directly from a repository (commit, PR, issue,
-  release, workflow run), stored with stable identifiers, never edited.
+  release, workflow run), represented with a stable identifier and never
+  edited. Phase 1B does not persist it.
 - **Evidence** — a fact, file, or documentation section linked to a claim as
   support; a reference, not a copy.
-- **Derived metric** — a number computed deterministically from facts
-  (language evolution, CI pass rate, release cadence).
+- **Derived metric** — a number computed deterministically from facts with a
+  visible definition, denominator/sample size, and limitation.
 - **Claim** — a human-readable statement (typically a milestone) carrying a
   confidence state, a review state, and evidence links.
 
@@ -113,12 +114,32 @@ timeout, upstream unavailable, configuration, malformed response);
 success-only ~5-minute normalized snapshot caching with a visible freshness
 disclosure; fixture-backed deterministic tests throughout.
 
+**Phase 1B (done):** a separate server-only
+`PublicRepositoryActivityProvider` normalizes five bounded, page-one sources:
+20 commits on the default branch, 20 pull requests, 20 issue-endpoint records
+(with PR markers filtered), 10 releases, and 20 workflow runs. Each becomes a
+product-owned Fact evidence candidate with a stable ID, canonical GitHub URL,
+occurrence timestamp, and bounded safe text. At most two activity requests run
+concurrently; a full uncached page costs at most eight GitHub GETs including
+Phase 1A. Pagination metadata only discloses whether more may exist and is
+never followed.
+
+The repository route now shows an activity overview, a unified timeline
+capped at 30 records, category details, partial source availability, and four
+strictly deterministic sampled summaries: workflow conclusion counts and a
+success ratio over all completed fetched runs; median adjacent interval for
+at least three published non-draft releases; standalone issue states; and
+pull-request states (merged only when `merged_at` exists). These are bounded
+samples, never complete history, quality, reliability, productivity, or
+performance claims. Fully available activity uses a separate success-only
+~5-minute cache; partial results remain visible but bypass caching.
+
 **Out (explicitly, still):** GitHub authentication, GitHub Apps, webhooks,
 PostgreSQL/Prisma, background jobs, external AI providers, billing, private
-repositories, deployment — and all Phase 1B activity ingestion (commits,
-pull requests, issues, releases, workflow runs, contributor data, scoring,
-milestone or case-study generation, AI summaries). The snapshot UI labels
-deferred capabilities as later phases and never fabricates them.
+repositories, deployment, full-history crawling, contributor data, source
+analysis, diffs, reviews, comments, jobs/logs/artifacts, scoring, milestone or
+case-study generation, and AI summaries. The real repository UI labels its
+bounded scope and never fabricates deferred capabilities.
 
 ## Demo requirements (implemented)
 

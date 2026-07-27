@@ -1,9 +1,9 @@
 # CommitTrail — Architecture
 
-_Phase 1A revision. Current architecture first; everything under "Reserved"
+_Phase 1B revision. Current architecture first; everything under "Reserved"
 is planned but intentionally **not implemented**._
 
-## Current architecture (Phase 1A)
+## Current architecture (Phase 1B)
 
 A single Next.js 16 application (App Router, `src/` layout, `@/*` alias).
 No backend services, no database, no required environment variables. The
@@ -19,7 +19,7 @@ src/
     landing/              Landing page sections
     demo/                 Demo dashboard panels (synthetic, presentational)
     explore/              Repository input form (progressive enhancement)
-    repository/           Live snapshot UI + typed error states
+    repository/           Live snapshot + activity evidence UI and states
   lib/
     github/               Server-only public-data boundary (see below)
     demo/                 Demo domain: types, deterministic fixtures, derivations
@@ -28,22 +28,31 @@ src/
     format.ts, utils.ts   Deterministic formatting, cn()
 ```
 
-### The Phase 1A provider boundary (`src/lib/github/`)
+### The Phase 1 provider boundaries (`src/lib/github/`)
 
 ```
 types.ts                                Product-owned snapshot model
+activity-types.ts                       Product-owned evidence records/sections
 errors.ts                               Typed provider error taxonomy
 parse-repository-input.ts               Input parsing + validation (SSRF boundary)
 public-repository-provider.ts           Narrow provider interface
-github-rest-public-repository-provider.ts  REST implementation (native fetch)
+public-repository-activity-provider.ts  Separate narrow activity interface
+github-rest-client.ts                   Shared fixed-origin GET transport
+github-rest-public-repository-provider.ts  Snapshot REST implementation
+github-rest-public-repository-activity-provider.ts  Bounded activity REST implementation
 map-github-response.ts                  Runtime validation + mapping + README safety
+map-github-activity-response.ts         Activity validation + privacy mapping
+safe-public-text.ts                     Control stripping/whitespace/text bounds
+pagination.ts                           Safe next-page disclosure (never follows)
+activity-derivations.ts                 Pure sampled arithmetic + timeline
 service.ts                              Server-only composition (reads GITHUB_TOKEN)
 snapshot-cache.ts                       Success-only ~5-minute data cache boundary
+activity-cache.ts                       Full-success-only ~5-minute activity cache
 ```
 
 - **Server-only.** Provider modules are imported exclusively from Server
   Components; browsers never call GitHub and raw GitHub payload types never
-  leave `map-github-response.ts`.
+  leave the snapshot/activity mapper boundary.
 - **SSRF boundary.** Visitor input is parsed into a validated
   `{ owner, repo }`; requests are constructed only against the fixed
   `https://api.github.com` base with an explicit API version header.
@@ -51,17 +60,35 @@ snapshot-cache.ts                       Success-only ~5-minute data cache bounda
   mapping; missing required fields produce a typed malformed-response error,
   never invented fallbacks.
 - **Bounded requests.** Three GETs per snapshot (metadata, then languages +
-  README in a bounded parallel pair), 10 s timeout covering body reads, no
-  automatic retries.
-- **Replaceable.** Routes depend on the `PublicRepositoryProvider`
-  interface; tests inject fixture-backed fetch implementations, and Phase 2
-  can add a persistence-backed provider without touching UI code.
-- **Caching.** Uncached provider GETs feed a narrow ~5-minute server data
-  cache keyed by normalized owner/repository. Only a resolved, normalized
-  snapshot is stored; provider failures remain typed rejections. Route and
-  error rendering stay dynamic, so invalid input, not-found, rate-limit,
-  configuration, timeout, upstream, malformed, and unexpected failures are
-  not retained as normal snapshot values. Cache keys contain no secrets.
+  README) plus exactly five page-one activity GETs (commits 20, pulls 20,
+  issues 20, releases 10, workflow runs 20): eight maximum for an uncached
+  full page. Activity uses two workers, no automatic retries, and a 10 s
+  timeout covering body reads. Successful JSON bodies are capped at 2 MiB and
+  error-message bodies at 8 KiB. Metadata/default branch is resolved first,
+  so its failure prevents the dependent commit request.
+- **Pagination is metadata only.** The `Link` parser recognizes an exact
+  `next` relation only on `https://api.github.com`. It returns a boolean and
+  never follows or exposes the upstream URL.
+- **Replaceable.** Routes depend on narrow snapshot and activity provider
+  interfaces; tests inject fixture-backed fetch implementations. Persistence
+  remains deferred.
+- **Partial isolation.** Each activity section carries an
+  available/unavailable tagged state. Rate limits, timeouts, upstream outages,
+  malformed responses, and unsupported sources remain local; a valid empty
+  Actions wrapper is a genuine available empty section. Repository not-found
+  stays a full snapshot error and optional-token rejection stays a server
+  configuration error.
+- **Caching.** Snapshot and activity have separate ~5-minute caches keyed by
+  normalized owner/repository (plus public default-branch context for
+  activity). Only a resolved snapshot or fully available activity result is
+  stored. Partial activity rejects inside the cache callback and is returned
+  outside it, so transient unavailable states are not frozen. Keys and values
+  contain no secrets.
+- **Evidence identity and privacy.** Commits use
+  `github:commit:{fullSha}`; PRs, issues, releases, and workflow runs use
+  GitHub database IDs. UI models retain no commit email or multiline body,
+  issue/release body, raw payload, asset URL, workflow log, or diff. Untrusted
+  text is control-stripped, whitespace-normalized, bounded, and React-escaped.
 
 Principles in force now:
 

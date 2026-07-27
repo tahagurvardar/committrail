@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { RepositoryActivity } from "@/components/repository/repository-activity";
 import { RepositorySnapshot } from "@/components/repository/repository-snapshot";
 import {
   SnapshotErrorState,
   type SnapshotErrorDetails,
 } from "@/components/repository/snapshot-error-state";
 import { isProviderError } from "@/lib/github/errors";
+import { getPublicRepositoryActivity } from "@/lib/github/activity-cache";
+import type { PublicRepositoryActivity } from "@/lib/github/activity-types";
 import { validateRepositoryIdentifier } from "@/lib/github/parse-repository-input";
 import { getPublicRepositorySnapshot } from "@/lib/github/snapshot-cache";
 import type { PublicRepositorySnapshot } from "@/lib/github/types";
@@ -30,8 +33,8 @@ export async function generateMetadata({
     return { title: "Repository snapshot" };
   }
   return {
-    title: `${identifier.owner}/${identifier.repo} — public snapshot`,
-    description: `Read-only public snapshot of ${identifier.owner}/${identifier.repo}: metadata, languages, and README, fetched from the GitHub REST API.`,
+    title: `${identifier.owner}/${identifier.repo} — public evidence`,
+    description: `Read-only public snapshot and bounded recent activity evidence for ${identifier.owner}/${identifier.repo}, fetched from the GitHub REST API.`,
   };
 }
 
@@ -77,9 +80,25 @@ export default async function RepositorySnapshotPage({ params }: RouteProps) {
     notFound();
   }
 
+  let activity: PublicRepositoryActivity;
+  try {
+    activity = await getPublicRepositoryActivity(identifier, {
+      defaultBranch: snapshot.defaultBranch,
+    });
+  } catch (error) {
+    // Token configuration is a site-wide operator problem. Other unexpected
+    // failures still use the route error boundary; endpoint-local failures are
+    // normalized by the activity provider and do not hide the snapshot.
+    if (isProviderError(error) && error.code === "not-found") {
+      notFound();
+    }
+    throw error;
+  }
+
   return (
     <div className="container-page py-10 sm:py-14">
       <RepositorySnapshot snapshot={snapshot} />
+      <RepositoryActivity activity={activity} />
     </div>
   );
 }
