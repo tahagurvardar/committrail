@@ -10,6 +10,11 @@ counts with productivity, or silently publish generated text.
 [![CI](https://github.com/tahagurvardar/committrail/actions/workflows/ci.yml/badge.svg)](https://github.com/tahagurvardar/committrail/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/tahagurvardar/committrail/actions/workflows/codeql.yml/badge.svg)](https://github.com/tahagurvardar/committrail/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Public Demo](https://img.shields.io/badge/Public_Demo-Live-0f766e.svg)](https://committrail.vercel.app)
+
+Try the **[Public Demo](https://committrail.vercel.app)**. Account and private
+workspace features are disabled, and `/demo` contains deterministic synthetic
+data. Full functionality is available through the local full-mode setup below.
 
 ## Product tour
 
