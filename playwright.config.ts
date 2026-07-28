@@ -32,7 +32,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run db:test:prepare && npm run dev",
+    command: "node scripts/start-e2e.mjs",
     url: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

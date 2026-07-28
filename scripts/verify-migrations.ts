@@ -2,7 +2,7 @@ import "dotenv/config";
 import { execFileSync } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { getPrisma } from "../src/lib/db/prisma";
+import { createScriptPrisma } from "./script-prisma";
 
 const root = process.cwd();
 const migrationsRoot = path.join(root, "prisma", "migrations");
@@ -39,7 +39,7 @@ execFileSync(
   { stdio: "inherit", env: process.env },
 );
 
-const prisma = getPrisma();
+const prisma = createScriptPrisma();
 try {
   const indexes = await prisma.$queryRaw<Array<{ indexname: string }>>`
     SELECT indexname

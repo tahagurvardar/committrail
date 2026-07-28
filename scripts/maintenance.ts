@@ -1,10 +1,10 @@
 import "dotenv/config";
-import { getPrisma } from "../src/lib/db/prisma";
+import { createScriptPrisma } from "./script-prisma";
 
 const command = process.argv[2] ?? "verify-invariants";
 const apply = process.argv.includes("--apply");
 const allowTest = process.argv.includes("--allow-test-database");
-const prisma = getPrisma();
+const prisma = createScriptPrisma();
 
 try {
   if (apply) assertWriteTarget(allowTest);
