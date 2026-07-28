@@ -1,254 +1,159 @@
 # CommitTrail
 
-> **Status: Phase 5 — deliberate publishing and portfolio outputs.**
-> The account-free explorer remains available. Users can create a private
-> personal workspace, verify a read-only GitHub App installation, track public
-> or private repositories, persist bounded normalized evidence, synchronize
-> manually, receive verified GitHub App webhooks, process durable targeted
-> jobs, inspect provenance, author private claims, and review grounded drafting
-> suggestions. Owners may deliberately publish reviewed claims through
-> immutable privacy-safe revisions and build deterministic private portfolio
-> outputs. There is no ranking or deployment.
+**Evidence-backed engineering stories, with provenance and owner control.**
 
-CommitTrail uses PostgreSQL 17, Prisma ORM 7.9.1 with the `pg` driver adapter,
-Better Auth 1.6.25 with database sessions, and JOSE 6.2.4 for short-lived
-RS256 GitHub App JWTs. See [local database setup](docs/local-database.md),
-[GitHub App setup](docs/github-app-setup.md), and the
-[account data lifecycle](docs/account-data-lifecycle.md),
-[webhook ingestion](docs/webhook-ingestion.md), the
-[ingestion worker](docs/ingestion-worker.md), and
-[evidence claims](docs/evidence-claims.md).
+CommitTrail turns bounded GitHub facts into an inspectable evidence graph,
+human-reviewed claims, deliberately published project revisions, and private
+portfolio outputs. It does not rank developers, infer seniority, equate commit
+counts with productivity, or silently publish generated text.
 
-**Turn GitHub history into evidence-backed engineering stories.**
+[![CI](https://github.com/tahagurvardar/committrail/actions/workflows/ci.yml/badge.svg)](https://github.com/tahagurvardar/committrail/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/tahagurvardar/committrail/actions/workflows/codeql.yml/badge.svg)](https://github.com/tahagurvardar/committrail/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-CommitTrail is an evidence-first engineering timeline and portfolio
-intelligence platform. It reads repository facts and bounded recent activity,
-then helps owners create and review private evidence-linked claim suggestions,
-publish selected verified claims deliberately, and build private case-study,
-CV-bullet, and interview-story outputs.
+## Product tour
 
-CommitTrail is deliberately _not_ a statistics dashboard. It never ranks
-developers, never infers seniority, and never treats commit counts as
-productivity. See [docs/methodology.md](docs/methodology.md) and
-[ADR 0003](docs/decisions/0003-no-developer-ranking.md).
+| Landing                                                          | Synthetic demo                                                      |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------- |
+| ![CommitTrail landing page](docs/assets/screenshots/landing.png) | ![Clearly labeled synthetic demo](docs/assets/screenshots/demo.png) |
 
-## What exists today
+| Public profile                                                                      | Published project                                                                        |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| ![Deterministic public profile fixture](docs/assets/screenshots/public-profile.png) | ![Evidence-backed published project fixture](docs/assets/screenshots/public-project.png) |
 
-| Route                          | Purpose                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------ |
-| `/`                            | Public landing page: problem, workflow, evidence graph, trust principles |
-| `/explore`                     | Enter a public repository (`owner/repo` or github.com URL) — live data   |
-| `/repositories/[owner]/[repo]` | Real snapshot plus bounded recent public activity evidence               |
-| `/demo`                        | Deterministic synthetic full-product preview (fictional data, labeled)   |
-| `/login`, `/register`          | Better Auth email/password identity; no email delivery                   |
-| `/dashboard/*`                 | Private delivery/job health, evidence, drafts, claims, and graph         |
-| `/dashboard/profile`           | Configure the workspace-owned public profile                             |
-| `/dashboard/publications/*`    | Draft, preview, publish, and manage immutable project revisions          |
-| `/dashboard/outputs/*`         | Build and download deterministic private portfolio outputs               |
-| `/profiles/[profileSlug]`      | PUBLIC profile and indexed PUBLIC projects                               |
-| `/projects/[projectSlug]`      | Published PUBLIC or directly shared UNLISTED project revision            |
-| `/about`                       | Product purpose, what it is / is not, trust principles                   |
-| `/methodology`                 | Facts → evidence → claims → user approval, states, boundaries            |
-| `*`                            | Custom not-found page                                                    |
+![Authenticated workspace fixture](docs/assets/screenshots/dashboard.png)
 
-The live snapshot and the synthetic demo are visually and verbally
-distinguished so real facts are never confused with the fictional preview.
+All screenshots are generated by Playwright from fictional `.example.test`
+fixtures. They contain no production account, repository, claim, token, or
+personal data.
 
-## Technology
+## Capabilities
 
-- [Next.js 16](https://nextjs.org) (App Router, Server Components by default)
-- [React 19](https://react.dev)
-- Strict [TypeScript](https://www.typescriptlang.org)
-- [Tailwind CSS 4](https://tailwindcss.com) with a token-based design system
-  (light/dark, reduced motion, visible focus states)
-- shadcn/ui-compatible component structure (`src/components/ui`, cva + `cn`)
-- [Vitest](https://vitest.dev) + React Testing Library + jsdom
-- [Playwright](https://playwright.dev) configuration prepared for later
-  browser tests
-- ESLint + Prettier, GitHub Actions CI on Node 22
-- PostgreSQL-backed ingestion worker executed with `tsx`; no external queue
-- No GitHub SDK: all eight bounded REST requests use native server-side
-  `fetch`
+- Account-free, read-only exploration of public repository facts and bounded
+  recent activity.
+- Clearly labeled, deterministic synthetic full-product demo.
+- Private Better Auth workspace with a verified read-only GitHub App.
+- Minimal HMAC-verified webhook envelopes, a durable PostgreSQL queue, bounded
+  retries, idempotent reconciliation, and provenance-preserving evidence.
+- Human-authored claims and optional grounded suggestions that require selected
+  evidence, remain private, and never auto-verify.
+- Deliberate publication of immutable PUBLIC or UNLISTED revisions containing
+  only explicitly reviewed claims and evidence projections.
+- Deterministic private case-study, CV-bullet, and interview-story outputs.
+- Health checks, strict browser headers, sanitized diagnostics, config and
+  migration validation, guarded maintenance/restore tooling, and graceful
+  workers.
 
-## The Phase 1 public-data boundary
+See the [methodology](docs/methodology.md), [architecture](docs/architecture.md),
+[security and privacy model](docs/security-and-privacy.md), and
+[authorization matrix](docs/authorization-matrix.md).
 
-- **Server-only provider.** All GitHub access lives behind
-  `PublicRepositoryProvider` (`src/lib/github/`). UI components never call
-  GitHub; browsers never talk to the GitHub API.
-- **SSRF protection.** Visitor input is parsed and validated into
-  `{ owner, repo }` (`parse-repository-input.ts`); requests are constructed
-  only against the fixed `https://api.github.com` base. Submitted URLs are
-  never fetched.
-- **Read-only.** Only GET requests to repository metadata, languages, README,
-  commits, pulls, issues, releases, and Actions runs. No detail, diff, comment,
-  job, log, artifact, asset, or second-page fetches.
-- **Untrusted README handling.** Base64 content is size-capped, decoded, and
-  reduced to an escaped plain-text excerpt — no raw repository HTML is ever
-  rendered.
-- **Honest failures.** Typed states for not-found-or-inaccessible,
-  rate-limited (with `Retry-After` or reset timing only when GitHub provides
-  it), timeout, upstream unavailability, configuration problems, and
-  malformed responses. A GitHub 404 is presented as "not found or not
-  publicly accessible" — never a guess about which.
-- **Bounded requests.** 10-second timeout and no retry. An uncached full page
-  costs at most eight requests: metadata first; languages and README; then one
-  page each of commits (20), pull requests (20), issues (20), releases (10),
-  and workflow runs (20). Activity concurrency never exceeds two. Successful
-  JSON bodies are capped at 2 MiB before parsing; error bodies at 8 KiB.
-- **Pagination.** Only page 1 is requested. A safely parsed GitHub `Link`
-  header can set `hasMore`; its URLs are never followed or exposed.
-- **Runtime validation and privacy.** Raw GitHub response shapes stop at the
-  provider boundary. Commit email and multiline bodies, issue/release bodies,
-  and raw payloads are not retained. Unsafe public text is control-stripped,
-  whitespace-normalized, bounded, and rendered as escaped text.
-- **Partial availability.** Each activity source is independently available or
-  unavailable. A local rate limit, timeout, malformed response, or unsupported
-  endpoint does not erase the repository snapshot or other sources. Pull
-  requests returned by the issue endpoint are removed.
-- **Caching.** Successfully normalized snapshots and fully available activity
-  use separate ~5-minute server caches. Partial activity deliberately bypasses
-  caching so transient failures are not frozen. Keys contain normalized
-  repository identity and no token.
+## Routes
 
-## Activity evidence and deterministic summaries
+| Route                                      | Purpose                                          |
+| ------------------------------------------ | ------------------------------------------------ |
+| `/`, `/about`, `/methodology`              | Product scope, boundaries, and methodology       |
+| `/explore`, `/repositories/[owner]/[repo]` | Account-free public GitHub facts                 |
+| `/demo`                                    | Fictional deterministic full-product preview     |
+| `/login`, `/register`, `/dashboard/*`      | Private account and workspace                    |
+| `/profiles/[slug]`                         | Indexed PUBLIC profile and projects              |
+| `/projects/[slug]`                         | Immutable PUBLIC or exact-link UNLISTED revision |
+| `/api/health/live`, `/api/health/ready`    | Sanitized process/readiness probes               |
 
-Every activity item is a product-owned fact record with a stable ID such as
-`github:commit:{sha}` or `github:workflow-run:{databaseId}`, a canonical
-GitHub link, occurrence time, bounded title, source label, and Fact
-confidence. The unified timeline shows at most 30 records from the fetched
-windows and never claims complete history.
+## Trust boundaries
 
-The only real-data derivations are transparent arithmetic:
+- Browsers never call GitHub directly. Visitor input is parsed as repository
+  identity and requests use a fixed GitHub API origin.
+- Fetches are read-only, page-one, size-capped, timeout-bounded, and normalized.
+  Raw payloads, commit email/body, issue body, logs, diffs, and source files are
+  not retained.
+- GitHub 404 remains “not found or not publicly accessible.” Partial upstream
+  failure never becomes an invented conclusion.
+- Evidence is fact-labeled and sampled; transparent arithmetic is never
+  presented as quality, productivity, maturity, or developer performance.
+- Owner actions scope database predicates to the authenticated workspace.
+  Unauthorized and absent private resources share generic responses.
+- Publishing is an explicit ceremony. Private repository identifiers and source
+  links are redacted from public snapshots.
+- External drafting requires explicit provider-specific consent. No provider is
+  needed for evidence, publishing, or outputs.
 
-- workflow outcomes count completed/successful/failed-like/other and queued or
-  in-progress runs; any success percentage uses all completed runs in the
-  fetched window as its denominator;
-- release interval is the median elapsed days between adjacent published,
-  non-draft releases, only with at least three valid releases;
-- issue and pull-request summaries count states only inside their recently
-  returned samples; a PR is “merged” only when GitHub supplies `merged_at`.
+## Local development
 
-These are not quality, productivity, maturity, reliability, or developer
-performance measures. There are no scores or rankings.
-
-### Optional `GITHUB_TOKEN`
-
-The app works without any environment variables, using GitHub's anonymous
-public-data rate limit (shared, 60 requests/hour per address). Operators may
-set a server-only `GITHUB_TOKEN` (fine-grained, **no scopes**) to raise the
-limit. It is never required, never exposed to the client, never logged, and
-never stored — see [.env.example](.env.example).
-
-## Getting started
-
-Requires Node.js 22 (CI runs on 22 with npm 10; see
-[.nvmrc](.nvmrc)) and npm.
+Requires Node 22, npm 10, and PostgreSQL 17. Development and test databases must
+be separate.
 
 ```bash
+cp .env.example .env.local
 npm ci
+npm run db:migrate:deploy
 npm run dev
 ```
 
-The public explorer still needs no account or secret. Private Phase 4 work
-requires PostgreSQL and the Phase 2 auth/App variables; webhook intake also
-requires `GITHUB_WEBHOOK_SECRET`.
+The public explorer can run without a GitHub token. A server-only, no-scope
+`GITHUB_TOKEN` is optional for a larger public API allowance. Private features
+need the database/auth/encryption values and GitHub App configuration described
+in [`.env.example`](.env.example) and
+[GitHub App setup](docs/github-app-setup.md).
 
-## Scripts
+## Verification
 
-| Script                          | What it does                                      |
-| ------------------------------- | ------------------------------------------------- |
-| `npm run dev`                   | Start the development server                      |
-| `npm run build`                 | Production build                                  |
-| `npm run start`                 | Serve the production build                        |
-| `npm run lint`                  | ESLint                                            |
-| `npm run typecheck`             | TypeScript, no emit                               |
-| `npm run format`                | Prettier, write                                   |
-| `npm run format:check`          | Prettier, check only                              |
-| `npm test`                      | Unit/component tests, single run                  |
-| `npm run test:watch`            | Tests in watch mode                               |
-| `npm run test:e2e`              | Playwright smoke tests (see prerequisite)         |
-| `npm run worker:ingestion`      | Run the durable ingestion worker                  |
-| `npm run worker:ingestion:once` | Process one bounded ingestion batch               |
-| `npm run db:test:prepare`       | Deploy migrations to the disposable test database |
-| `npm run test:integration`      | PostgreSQL integration and queue tests            |
+```bash
+npm run config:check
+npm run db:validate
+npm run db:verify
+npm run format:check
+npm run lint
+npm run typecheck
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run build
+npm run release:check
+```
 
-Browser tests are not part of CI. To run them locally once:
-`npx playwright install chromium`, then `npm run test:e2e`.
+E2E uses a disposable database whose URL must contain `test`. Global setup
+clears only that database, registers through the real auth API, and seeds
+fictional deterministic records. Projects cover Chromium desktop and a
+375-pixel mobile viewport. The suite includes critical workflows, privacy
+boundaries, security headers, accessibility, screenshots, and regression
+performance budgets.
 
-## Testing philosophy
+CI runs Node 22/npm 10 with PostgreSQL 17. It pins actions by commit, uses
+least-privilege permissions, separates browser tests, cancels superseded runs,
+runs CodeQL, and checks the runtime audit. The runtime dependency audit is clean
+at v1.0.0; the time-bounded development-toolchain audit exception is documented
+in [SECURITY.md](SECURITY.md).
 
-Tests are deterministic and never depend on live GitHub availability: the
-input parser is covered against valid, invalid, and malicious-looking forms;
-the provider is tested against injected fixture responses (success, 404,
-403/429 rate limits, 401, 500, timeout, malformed payloads); UI tests cover
-accessible names, validation association, fact labeling, and every honest
-failure state. Demo fixtures remain pinned by exact-value tests.
+## Operations and deployment
 
-## Architecture direction
+- [Operations runbook](docs/operations.md)
+- [Database backup and restore](docs/backup-and-restore.md)
+- [Deployment preparation](docs/deployment.md)
+- [Accessibility verification](docs/accessibility.md)
+- [Performance budgets](docs/performance.md)
+- [Release checklist](docs/release-checklist.md)
 
-A single Next.js application with the public provider boundary, Better Auth,
-Prisma/PostgreSQL, a read-only GitHub App, verified minimal-envelope webhook
-intake, durable targeted and grounded-drafting jobs, append-only observations,
-private human-reviewed claim/evidence graph, immutable publication snapshots,
-and deterministic private output builders. Details:
-[docs/architecture.md](docs/architecture.md).
+`APP_MODE=public-demo` is a database-free, read-only presentation mode that
+blocks auth and private product surfaces. `APP_MODE=full` requires PostgreSQL,
+the web process, and a separate ingestion worker. No deployment is implied by
+this repository or release.
 
-Documentation index:
+## Project policy
 
-- [docs/product-spec.md](docs/product-spec.md) — product definition and scope
-- [docs/architecture.md](docs/architecture.md) — current and reserved architecture
-- [docs/roadmap.md](docs/roadmap.md) — phase plan
-- [docs/security-and-privacy.md](docs/security-and-privacy.md) — security posture and commitments
-- [docs/methodology.md](docs/methodology.md) — evidence, claims, and approval
-- [docs/decisions/](docs/decisions) — architecture decision records
+CommitTrail 1.0.0 is available under the [MIT license](LICENSE). Read
+[CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md),
+[SUPPORT.md](SUPPORT.md), [SECURITY.md](SECURITY.md), and
+[CHANGELOG.md](CHANGELOG.md) before participating.
 
-## Current limitations (Phase 5)
+CommitTrail is independent and is not affiliated with, endorsed by, or
+sponsored by GitHub, Inc.
 
-- Activity is a page-one recent sample, not complete history: 20 commits, 20
-  pull requests, 20 issue-endpoint records before PR filtering, 10 releases,
-  and 20 workflow runs. There is no load-more or cursor persistence.
-- Workflow jobs/logs, commit/PR diffs, reviews, comments, source files, release
-  assets, archives, and contributor analysis are not fetched.
-- Anonymous GitHub rate limits are shared and small; the UI reports
-  `Retry-After` or reset timing only when GitHub supplies it, and otherwise
-  says to try later without inventing a time.
-- The `/demo` dashboard remains fully synthetic and clearly labeled.
-- Webhook workers are explicit local/server processes; there is no scheduler,
-  hosted queue, polling, or automatic redelivery.
-- Claims and grounded suggestions remain private until the owner explicitly
-  selects eligible verified claims and completes the publishing ceremony.
-  Drafting is disabled unless an operator configures a local or external
-  OpenAI-compatible provider; publishing and output building need no provider.
-  There is no billing, team collaboration, custom domain, or deployment.
-- Playwright is configured but browser tests are opt-in and not in CI.
-- `npm audit` reports advisories confined to the ESLint dev toolchain;
-  the runtime audit (`npm audit --omit=dev`) is clean.
-- No license yet: **licensing will be decided before the public v1 release.**
+## Known limitations
 
-## Trademark note
-
-CommitTrail is an independent project and is not affiliated with, endorsed
-by, or sponsored by GitHub, Inc.
-
-## Phase 4 drafting and Phase 5 publishing
-
-Grounded drafting is disabled by default and requires no paid API. An optional
-server-side OpenAI-compatible provider may be local loopback or external HTTPS;
-external use requires exact provider-specific workspace consent. Owners select
-1–12 stored facts, the PostgreSQL worker generates a strict private suggestion,
-and every retained sentence must cite selected evidence. Unknown citations,
-stale evidence, unsafe output, and ranking/productivity policy violations are
-mechanically rejected.
-
-Candidates are immutable and never publish or verify themselves. Explicit
-acceptance creates or replaces a private `AI_ASSISTED` claim in `DRAFT`; human
-editing and verification remain separate audited owner actions. See
-[`docs/grounded-drafting.md`](docs/grounded-drafting.md) and
-[`docs/drafting-provider-setup.md`](docs/drafting-provider-setup.md).
-Phase 5 adds deliberate evidence-backed publishing: minimal public profiles,
-immutable project-publication revisions, explicit privacy-safe evidence
-disclosures, and deterministic private case-study, CV-bullet, and
-interview-story outputs. Nothing publishes automatically, and publishing or
-output building never requires a model provider. See
-[`docs/publishing.md`](docs/publishing.md) and
-[`docs/portfolio-outputs.md`](docs/portfolio-outputs.md).
+Activity is a bounded recent sample rather than complete history. The project
+does not fetch diffs, source files, comments, review content, logs, artifacts,
+or archives. There is no billing, team collaboration, email delivery, hosted
+queue, scheduler, or automatic webhook redelivery. Deployment, backup retention,
+restore drills, provider data handling, and comprehensive assistive-technology
+testing remain operator responsibilities.

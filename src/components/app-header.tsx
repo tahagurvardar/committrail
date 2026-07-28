@@ -2,11 +2,22 @@ import Link from "next/link";
 
 import { ArrowRightIcon, LogoMark } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { isPublicDemo } from "@/lib/config/app-mode";
 import { siteConfig } from "@/lib/site";
 
 export function AppHeader() {
+  const publicDemo = isPublicDemo();
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
+      {publicDemo && (
+        <p
+          role="status"
+          className="bg-accent px-4 py-2 text-center text-xs text-accent-foreground"
+        >
+          Public demo · account features disabled · synthetic previews store no
+          data
+        </p>
+      )}
       <div className="container-page flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3">
         <Link
           href="/"
@@ -18,12 +29,14 @@ export function AppHeader() {
 
         <div className="flex items-center gap-2 sm:order-last">
           <ThemeToggle />
-          <Link
-            href="/login"
-            className="inline-flex h-9 items-center rounded-md px-3 text-sm font-medium hover:bg-accent"
-          >
-            Sign in
-          </Link>
+          {!publicDemo && (
+            <Link
+              href="/login"
+              className="inline-flex h-9 items-center rounded-md px-3 text-sm font-medium hover:bg-accent"
+            >
+              Sign in
+            </Link>
+          )}
           <Link
             href="/explore"
             className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium transition-colors hover:bg-accent"

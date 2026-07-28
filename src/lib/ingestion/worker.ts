@@ -19,6 +19,7 @@ export const INGESTION_BATCH_SIZE = 10;
 export const INGESTION_CONCURRENCY = 2;
 export const INGESTION_LEASE_MS = 2 * 60 * 1000;
 export const INGESTION_POLL_MS = 2_000;
+export const INGESTION_JOB_TIMEOUT_MS = 90_000;
 
 export async function claimIngestionJobs(input?: {
   workerId?: string;
@@ -63,25 +64,54 @@ export async function claimIngestionJobs(input?: {
 
 export async function processIngestionJob(
   job: IngestionJob,
-  options?: { draftProvider?: GroundedDraftProvider },
+  options?: {
+    draftProvider?: GroundedDraftProvider;
+    timeoutMs?: number;
+  },
 ): Promise<void> {
   try {
-    if (job.kind === "GROUNDED_DRAFT") {
-      await processDraftGenerationJob(job.id, options?.draftProvider);
-    } else if (job.trackedRepositoryId) {
-      await reconcileRepositorySource({
-        jobId: job.id,
-        generation: job.generation,
-        kind: job.kind,
-        trackedRepositoryId: job.trackedRepositoryId,
-        minimalPayload: job.minimalPayload,
-      });
-    } else {
-      await processInstallationJob(job);
-    }
+    const timeoutMs = Math.min(
+      Math.max(options?.timeoutMs ?? INGESTION_JOB_TIMEOUT_MS, 1),
+      INGESTION_LEASE_MS - 5_000,
+    );
+    await withTimeout(
+      (async () => {
+        if (job.kind === "GROUNDED_DRAFT") {
+          await processDraftGenerationJob(job.id, options?.draftProvider);
+        } else if (job.trackedRepositoryId) {
+          await reconcileRepositorySource({
+            jobId: job.id,
+            generation: job.generation,
+            kind: job.kind,
+            trackedRepositoryId: job.trackedRepositoryId,
+            minimalPayload: job.minimalPayload,
+          });
+        } else {
+          await processInstallationJob(job);
+        }
+      })(),
+      timeoutMs,
+    );
     await finishJob(job, "SUCCEEDED");
   } catch (error) {
     await failJob(job, error);
+  }
+}
+
+async function withTimeout<T>(work: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeout: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error("INGESTION_JOB_TIMEOUT")),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
   }
 }
 

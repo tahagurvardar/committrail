@@ -60,9 +60,9 @@ ignored or queued result before responding. It subscribes only to `push`,
 
 ## Hard boundaries
 
-No RAG/embeddings, public profiles or publishing, case-study/CV/social
-generation, teams, comments, billing, email, cron, Redis/external queues,
-paid infrastructure, source cloning/execution, diffs, reviews/comments,
+No RAG/embeddings, automatic publishing, teams, comments, billing, email,
+cron, Redis/external queues, paid infrastructure, source cloning/execution,
+diffs, reviews/comments,
 workflow logs/jobs/artifacts, release assets, GitHub writes, developer
 ranking, scoring, seniority, productivity, or quality inference.
 
@@ -78,9 +78,12 @@ ranking, scoring, seniority, productivity, or quality inference.
 - Phase 4: optional provider-neutral grounded drafting over 1–12 explicitly
   selected facts, strict sentence citations, external-transfer consent,
   immutable candidates, and human-only acceptance and verification.
+- Phase 5: deliberate immutable public/unlisted publication and deterministic
+  private portfolio outputs.
+- Phase 6: stable v1 hardening, browser/accessibility verification, operations,
+  governance, licensing, and release preparation.
 
-Phase 5 implements publishing and portfolio outputs within the boundaries
-below.
+CommitTrail v1 implements all six phases within the boundaries below.
 
 # Phase 5: deliberate publishing
 

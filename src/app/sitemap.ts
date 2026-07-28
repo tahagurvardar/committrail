@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { isPublicDemo } from "@/lib/config/app-mode";
 import { getPrisma } from "@/lib/db/prisma";
 import { configuredPublicAppUrl } from "@/lib/publishing/public-url";
 
@@ -7,6 +8,11 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const appUrl = configuredPublicAppUrl();
   if (!appUrl) return [];
+  if (isPublicDemo()) {
+    return ["/", "/about", "/methodology", "/demo"].map((pathname) => ({
+      url: `${appUrl}${pathname}`,
+    }));
+  }
   const [profiles, publications] = await Promise.all([
     getPrisma().publicProfile.findMany({
       where: { visibility: "PUBLIC" },

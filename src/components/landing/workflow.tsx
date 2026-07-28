@@ -59,9 +59,9 @@ export function Workflow() {
           ))}
         </ol>
         <p className="mt-6 font-mono text-xs text-muted-foreground">
-          Phase 1B note: CommitTrail can now read bounded public repository
-          facts and recent activity evidence. Later pipeline stages remain a
-          synthetic demo.
+          CommitTrail v1 supports this complete owner-controlled path. The
+          public demo remains synthetic; connected workspace data stays private
+          until an explicit publication ceremony.
         </p>
       </div>
     </section>

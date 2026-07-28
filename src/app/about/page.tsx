@@ -96,14 +96,13 @@ export default function AboutPage() {
       <div className="mt-16 max-w-2xl rounded-xl border border-border bg-surface p-6">
         <h2 className="font-semibold tracking-tight">Current status</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Phase 1B—public repository activity evidence. {siteConfig.name} can
-          fetch a read-only snapshot plus bounded recent commits, pull requests,
-          standalone issues, published releases, and workflow runs. The full
-          future product remains previewed with synthetic data in the demo.
-          There is still no account system, persistence, AI integration, or
-          deployment. Licensing will be decided before the public v1 release.{" "}
-          {siteConfig.name} is an independent project, not affiliated with
-          GitHub, Inc.
+          Stable v1. {siteConfig.name} combines a read-only public explorer with
+          private workspaces, verified GitHub App ingestion, provenance-linked
+          evidence and claims, optional grounded suggestions, deliberate
+          immutable publishing, and deterministic private outputs. The demo is
+          fictional and clearly labeled. The project is MIT licensed; no
+          production deployment is claimed. {siteConfig.name} is independent and
+          is not affiliated with GitHub, Inc.
         </p>
       </div>
     </div>

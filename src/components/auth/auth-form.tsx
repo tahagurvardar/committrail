@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth/auth-client";
+import { safeReturnPath } from "@/lib/auth/safe-return-path";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -41,11 +42,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       return;
     }
     const returnTo = search.get("returnTo");
-    router.push(
-      returnTo?.startsWith("/") && !returnTo.startsWith("//")
-        ? returnTo
-        : "/dashboard",
-    );
+    router.push(safeReturnPath(returnTo));
     router.refresh();
   }
 

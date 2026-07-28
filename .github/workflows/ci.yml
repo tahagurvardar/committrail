@@ -5,19 +5,28 @@ on:
     branches: ["**"]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NEXT_TELEMETRY_DISABLED: "1"
   DATABASE_URL: postgresql://committrail:committrail@localhost:5432/committrail_ci
   TEST_DATABASE_URL: postgresql://committrail:committrail@localhost:5432/committrail_test
-  BETTER_AUTH_URL: http://localhost:3000
+  BETTER_AUTH_URL: http://127.0.0.1:3000
   BETTER_AUTH_SECRET: ci-only-better-auth-secret-at-least-32-bytes
   APP_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
   GITHUB_WEBHOOK_SECRET: ci-only-deterministic-webhook-secret-32-bytes
+  PUBLIC_APP_URL: https://committrail.example.test
 
 jobs:
   quality:
-    name: Format, lint, typecheck, test, build
+    name: Quality, PostgreSQL, build, and release gates
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:17-alpine
@@ -34,10 +43,10 @@ jobs:
           --health-retries 20
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -55,6 +64,9 @@ jobs:
       - name: Runtime dependency audit
         run: npm audit --omit=dev
 
+      - name: Full dependency audit visibility
+        run: npm audit --audit-level=critical
+
       - name: Generate and validate Prisma client
         run: |
           npm run db:generate
@@ -62,6 +74,16 @@ jobs:
 
       - name: Apply migrations to disposable test database
         run: npm run db:test:prepare
+
+      - name: Verify migration chain and custom guards
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        run: npm run db:verify
+
+      - name: Verify release configuration modes
+        run: |
+          npm run config:check -- local-full
+          APP_MODE=public-demo npm run config:check -- public-demo
 
       - name: Check formatting
         run: npm run format:check
@@ -78,5 +100,65 @@ jobs:
       - name: PostgreSQL integration and worker/queue tests
         run: npm run test:integration
 
+      - name: Verify database invariants
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        run: npm run maintenance -- verify-invariants
+
       - name: Production build
         run: npm run build
+
+      - name: Release integrity
+        run: npm run release:check
+
+  browser:
+    name: Chromium E2E, accessibility, and screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: committrail
+          POSTGRES_PASSWORD: committrail
+          POSTGRES_DB: committrail_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U committrail -d committrail_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Install locked Chromium browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run deterministic browser release matrix
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+          E2E_FIXTURES: "1"
+        run: npm run test:e2e
+
+      - name: Upload privacy-safe deterministic screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-screenshots
+          path: docs/assets/screenshots/*.png
+          if-no-files-found: warn
+          retention-days: 3

@@ -19,12 +19,14 @@
 - Phase 5 — deliberate profile/project publishing, immutable snapshots,
   explicit public evidence disclosure, publication health, and deterministic
   private portfolio outputs without deployment or provider requirements.
+- Phase 6 — v1.0.0 release hardening: deterministic browser/accessibility
+  coverage, strict headers, operational health and maintenance, migration and
+  release verification, governance, licensing, and deployment preparation.
 
-## Later, not authorized by Phase 5
+## Post-v1 candidates
 
-Phase 6 may consider release hardening, E2E coverage, accessibility and
-performance verification, licensing, operations, and demo-deployment
-preparation. Teams, billing, and email require separate decisions.
+Teams, billing, email delivery, hosted queues, scheduling, and production
+deployment require separate product, privacy, operations, and cost decisions.
 
 ## Permanent non-goals
 
@@ -32,5 +34,5 @@ GitHub write access, source-code execution, developer ranking/scoring,
 seniority or productivity inference, burnout estimation, and automatic
 publication.
 
-Phase 5 consumes only reviewed private claims and never publishes candidates or
-bypasses the existing owner review boundary.
+Only reviewed verified claims may be selected for publication; candidates never
+bypass the existing owner review boundary.

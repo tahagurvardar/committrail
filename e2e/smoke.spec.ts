@@ -28,3 +28,13 @@ test("main navigation reaches the methodology page", async ({ page }) => {
     page.getByRole("heading", { level: 1, name: "Methodology" }),
   ).toBeVisible();
 });
+
+test("invalid explorer input is rejected without an external request", async ({
+  page,
+}) => {
+  await page.goto("/explore");
+  await page.getByLabel(/repository/i).fill("https://example.test/private");
+  await page.getByRole("button", { name: /snapshot/i }).click();
+  await expect(page).toHaveURL(/repository=/);
+  await expect(page.getByRole("alert")).toBeVisible();
+});

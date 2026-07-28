@@ -3,6 +3,7 @@ import {
   classifyIngestionError,
   INGESTION_BATCH_SIZE,
   INGESTION_CONCURRENCY,
+  INGESTION_JOB_TIMEOUT_MS,
   INGESTION_LEASE_MS,
   ingestionBackoffMs,
 } from "@/lib/ingestion/worker";
@@ -14,6 +15,7 @@ describe("ingestion worker policy", () => {
     expect(INGESTION_BATCH_SIZE).toBe(10);
     expect(INGESTION_CONCURRENCY).toBe(2);
     expect(INGESTION_LEASE_MS).toBe(120_000);
+    expect(INGESTION_JOB_TIMEOUT_MS).toBeLessThan(INGESTION_LEASE_MS);
   });
 
   it.each([
@@ -44,6 +46,14 @@ describe("ingestion worker policy", () => {
   it("retries sanitized transient errors", () => {
     expect(classifyIngestionError(new Error("GITHUB_RATE_LIMITED"))).toEqual({
       code: "GITHUB_RATE_LIMITED",
+      retryable: true,
+      retryAt: null,
+    });
+  });
+
+  it("classifies bounded job timeouts without arbitrary error prose", () => {
+    expect(classifyIngestionError(new Error("INGESTION_JOB_TIMEOUT"))).toEqual({
+      code: "INGESTION_JOB_TIMEOUT",
       retryable: true,
       retryAt: null,
     });
