@@ -7,6 +7,9 @@ export const dynamic = "force-dynamic";
 const links = [
   ["/dashboard", "Overview"],
   ["/dashboard/repositories", "Repositories"],
+  ["/dashboard/profile", "Public profile"],
+  ["/dashboard/publications", "Publications"],
+  ["/dashboard/outputs", "Outputs"],
   ["/dashboard/github", "GitHub"],
   ["/dashboard/settings", "Settings"],
 ] as const;

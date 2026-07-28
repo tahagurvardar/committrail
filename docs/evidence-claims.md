@@ -31,3 +31,11 @@ verification; later human editing is recorded without erasing origin.
 AI-assisted claim pages show candidate provenance, stale-evidence warnings, and
 a review checklist. Verification remains an explicit evidence-linked owner
 action.
+
+# Publication eligibility
+
+Only VERIFIED, non-archived claims with a verification timestamp, accessible
+same-repository evidence, current grounding, and safe public text can enter a
+publication or deterministic output. Eligibility and stored hashes are
+rechecked when configured, previewed, and published; an ineligible selected
+claim fails the operation instead of being silently omitted.

@@ -682,7 +682,7 @@ suite("Phase 4 PostgreSQL grounded drafting and review", () => {
     );
     expect(response.status).toBe(200);
     const exported = await response.json();
-    expect(exported.version).toBe(3);
+    expect(exported.version).toBe(4);
     expect(exported.workspace.draftingConsents).toHaveLength(2);
     expect(exported.workspace.draftGenerationRequests.length).toBeGreaterThan(
       0,

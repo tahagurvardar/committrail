@@ -46,3 +46,10 @@ Candidates are immutable suggestions. Rejection is append-only review history;
 regeneration creates a separate request. Acceptance creates or replaces a
 private claim with `AI_ASSISTED` origin, linked evidence, and `DRAFT` state.
 Only a later explicit owner action can verify the claim.
+
+# Publishing AI-assisted claims
+
+An accepted AI-assisted claim cannot publish until the owner explicitly
+verifies it. Public snapshots retain the AI_ASSISTED origin and display:
+"AI-assisted wording, reviewed and verified by the author." Provider identity,
+prompts, candidates, and usage are never public.

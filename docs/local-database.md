@@ -32,3 +32,10 @@ selected evidence, immutable candidates, normalized sentences/citations,
 review events, claim provenance, active-request partial indexes, and composite
 same-request/repository citation constraints. Integration tests require a
 separate PostgreSQL 17 URL whose database or schema name contains `test`.
+
+# Phase 5 migration verification
+
+Apply `20260728234000_phase_5_publishing_portfolio_outputs` with PostgreSQL 17.
+The migration adds case-insensitive slug indexes, permanent reservations,
+publication snapshot constraints, public query indexes, and output revision
+integrity. No Redis, external queue, model provider, or paid service is needed.

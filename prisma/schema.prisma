@@ -162,17 +162,84 @@ enum DraftReviewEventKind {
   CONSENT_REVOKED
 }
 
+enum PublicProfileVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum PublicSlugKind {
+  PROFILE
+  PROJECT
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  UNPUBLISHED
+  ARCHIVED
+}
+
+enum PublicationVisibility {
+  PUBLIC
+  UNLISTED
+}
+
+enum RepositoryDisclosurePolicy {
+  PUBLIC_REPOSITORY
+  IDENTITY_REDACTED
+}
+
+enum EvidenceDisclosureMode {
+  PUBLIC_SOURCE
+  SUMMARY_ONLY
+  PRIVATE_SOURCE_REDACTED
+}
+
+enum PublicationEventKind {
+  DRAFT_CREATED
+  PREVIEWED
+  PUBLISHED
+  REVISION_PUBLISHED
+  UNPUBLISHED
+  REPUBLISHED
+  ARCHIVED
+  RESTORED
+  VISIBILITY_CHANGED
+  EVIDENCE_BECAME_STALE
+  PROFILE_HIDDEN
+  REPOSITORY_DISCONNECTED
+  ACCOUNT_DELETED
+}
+
+enum PublicationHealthState {
+  CURRENT
+  REVIEW_REQUIRED
+  SOURCE_UNAVAILABLE
+}
+
+enum PortfolioOutputType {
+  CASE_STUDY
+  CV_BULLETS
+  INTERVIEW_STORY
+}
+
+enum PortfolioOutputStatus {
+  DRAFT
+  READY
+  ARCHIVED
+}
+
 model User {
-  id                       String                     @id
+  id                       String                       @id
   name                     String
-  email                    String                     @unique
-  emailVerified            Boolean                    @default(false)
+  email                    String                       @unique
+  emailVerified            Boolean                      @default(false)
   image                    String?
-  createdAt                DateTime                   @default(now())
-  updatedAt                DateTime                   @updatedAt
+  createdAt                DateTime                     @default(now())
+  updatedAt                DateTime                     @updatedAt
   sessions                 Session[]
   accounts                 Account[]
-  ownedWorkspace           Workspace?                 @relation("WorkspaceOwner")
+  ownedWorkspace           Workspace?                   @relation("WorkspaceOwner")
   memberships              WorkspaceMember[]
   connectionAttempts       GitHubConnectionAttempt[]
   initiatedSyncRuns        RepositorySyncRun[]
@@ -184,6 +251,9 @@ model User {
   draftGenerationRequests  DraftGenerationRequest[]
   draftReviewEvents        DraftReviewEvent[]
   reviewedDraftCandidates  DraftCandidate[]
+  publishedRevisions       ProjectPublicationRevision[]
+  publicationEvents        PublicationEvent[]
+  portfolioOutputRevisions PortfolioOutputRevision[]
 }
 
 model Session {
@@ -250,6 +320,10 @@ model Workspace {
   draftingConsents        WorkspaceDraftingConsent[]
   draftGenerationRequests DraftGenerationRequest[]
   draftReviewEvents       DraftReviewEvent[]
+  publicProfile           PublicProfile?
+  projectPublications     ProjectPublication[]
+  publicationEvents       PublicationEvent[]
+  portfolioOutputs        PortfolioOutput[]
 }
 
 model WorkspaceMember {
@@ -332,6 +406,8 @@ model TrackedRepository {
   ingestionCursors        RepositoryIngestionCursor[]
   evidenceClaims          EvidenceClaim[]
   draftGenerationRequests DraftGenerationRequest[]
+  projectPublications     ProjectPublication[]
+  portfolioOutputs        PortfolioOutput[]
 
   @@unique([workspaceId, githubRepositoryId])
   @@index([githubInstallationId])
@@ -349,26 +425,28 @@ model RepositorySnapshot {
 }
 
 model RepositoryEvidence {
-  id                    String                     @id @default(cuid())
-  trackedRepositoryId   String
-  evidenceId            String
-  evidenceType          String
-  githubSourceId        String
-  canonicalUrl          String
-  occurredAt            DateTime
-  title                 String
-  sourceLabel           String                     @default("GitHub")
-  confidence            String                     @default("fact")
-  factualPayload        Json
-  normalizedContentHash String                     @default("")
-  sourceAvailability    EvidenceSourceAvailability @default(AVAILABLE)
-  sourceUnavailableAt   DateTime?
-  firstSeenAt           DateTime                   @default(now())
-  lastSeenAt            DateTime                   @default(now())
-  trackedRepository     TrackedRepository          @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
-  observations          EvidenceObservation[]
-  claimLinks            ClaimEvidence[]
-  draftSelections       DraftGenerationEvidence[]
+  id                     String                          @id @default(cuid())
+  trackedRepositoryId    String
+  evidenceId             String
+  evidenceType           String
+  githubSourceId         String
+  canonicalUrl           String
+  occurredAt             DateTime
+  title                  String
+  sourceLabel            String                          @default("GitHub")
+  confidence             String                          @default("fact")
+  factualPayload         Json
+  normalizedContentHash  String                          @default("")
+  sourceAvailability     EvidenceSourceAvailability      @default(AVAILABLE)
+  sourceUnavailableAt    DateTime?
+  firstSeenAt            DateTime                        @default(now())
+  lastSeenAt             DateTime                        @default(now())
+  trackedRepository      TrackedRepository               @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  observations           EvidenceObservation[]
+  claimLinks             ClaimEvidence[]
+  draftSelections        DraftGenerationEvidence[]
+  publicationDisclosures PublicationEvidenceDisclosure[]
+  publicationSnapshots   PublicationEvidenceSnapshot[]
 
   @@unique([trackedRepositoryId, evidenceId])
   @@unique([id, trackedRepositoryId])
@@ -501,25 +579,28 @@ model RepositoryIngestionCursor {
 }
 
 model EvidenceClaim {
-  id                         String             @id @default(cuid())
+  id                         String                      @id @default(cuid())
   workspaceId                String
   trackedRepositoryId        String
   authorUserId               String
   statement                  String
-  status                     ClaimStatus        @default(NEEDS_EVIDENCE)
-  origin                     ClaimOrigin        @default(HUMAN)
-  humanEditedAfterAcceptance Boolean            @default(false)
+  status                     ClaimStatus                 @default(NEEDS_EVIDENCE)
+  origin                     ClaimOrigin                 @default(HUMAN)
+  humanEditedAfterAcceptance Boolean                     @default(false)
   verifiedAt                 DateTime?
-  version                    Int                @default(1)
-  createdAt                  DateTime           @default(now())
-  updatedAt                  DateTime           @updatedAt
-  workspace                  Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  trackedRepository          TrackedRepository  @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
-  author                     User               @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+  version                    Int                         @default(1)
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  workspace                  Workspace                   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  trackedRepository          TrackedRepository           @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  author                     User                        @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
   evidenceLinks              ClaimEvidence[]
   revisions                  ClaimRevision[]
-  sourceCandidate            DraftCandidate?    @relation("AcceptedCandidateClaim")
+  sourceCandidate            DraftCandidate?             @relation("AcceptedCandidateClaim")
   draftReviewEvents          DraftReviewEvent[]
+  publicationSelections      PublicationClaimSelection[]
+  publicationSnapshots       PublicationClaimSnapshot[]
+  portfolioSelections        PortfolioOutputClaim[]
 
   @@unique([id, trackedRepositoryId])
   @@index([workspaceId, trackedRepositoryId, status])
@@ -744,4 +825,288 @@ model DraftReviewEvent {
   @@index([candidateId, createdAt])
   @@index([claimId, createdAt])
   @@index([actorUserId, createdAt])
+}
+
+model PublicProfile {
+  id                 String                  @id @default(cuid())
+  workspaceId        String                  @unique
+  slug               String                  @unique
+  displayName        String
+  headline           String
+  biography          String
+  locationText       String?
+  personalWebsiteUrl String?
+  githubProfileUrl   String?
+  visibility         PublicProfileVisibility @default(PRIVATE)
+  firstPublishedAt   DateTime?
+  latestPublishedAt  DateTime?
+  version            Int                     @default(1)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  workspace          Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  publications       ProjectPublication[]
+
+  @@index([visibility, latestPublishedAt])
+}
+
+model PublicSlugReservation {
+  id                      String         @id @default(cuid())
+  slug                    String         @unique
+  kind                    PublicSlugKind
+  reservedByWorkspaceHash String
+  firstReservedAt         DateTime       @default(now())
+
+  @@index([kind, firstReservedAt])
+}
+
+model ProjectPublication {
+  id                         String                          @id @default(cuid())
+  workspaceId                String
+  trackedRepositoryId        String
+  profileId                  String
+  slug                       String                          @unique
+  internalTitle              String
+  title                      String
+  summary                    String
+  roleText                   String
+  projectPeriodText          String?
+  technologyLabels           String[]                        @default([])
+  problemText                String?
+  approachText               String?
+  outcomeText                String?
+  repositoryDisclosurePolicy RepositoryDisclosurePolicy
+  status                     PublicationStatus               @default(DRAFT)
+  visibility                 PublicationVisibility           @default(UNLISTED)
+  currentPublishedRevisionId String?                         @unique
+  lastPublishIdempotencyKey  String?                         @unique
+  firstPublishedAt           DateTime?
+  latestPublishedAt          DateTime?
+  unpublishedAt              DateTime?
+  archivedAt                 DateTime?
+  healthState                PublicationHealthState          @default(CURRENT)
+  healthCheckedAt            DateTime?
+  version                    Int                             @default(1)
+  createdAt                  DateTime                        @default(now())
+  updatedAt                  DateTime                        @updatedAt
+  workspace                  Workspace                       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  trackedRepository          TrackedRepository               @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  profile                    PublicProfile                   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  currentPublishedRevision   ProjectPublicationRevision?     @relation("CurrentPublicationRevision", fields: [currentPublishedRevisionId], references: [id], onDelete: SetNull)
+  revisions                  ProjectPublicationRevision[]    @relation("PublicationRevisions")
+  claimSelections            PublicationClaimSelection[]
+  evidenceDisclosures        PublicationEvidenceDisclosure[]
+  events                     PublicationEvent[]
+
+  @@unique([id, trackedRepositoryId])
+  @@index([workspaceId, status, updatedAt])
+  @@index([profileId, status, visibility, latestPublishedAt])
+  @@index([status, visibility, latestPublishedAt])
+  @@index([trackedRepositoryId, healthState])
+}
+
+model PublicationClaimSelection {
+  publicationId         String
+  claimId               String
+  trackedRepositoryId   String
+  position              Int
+  selectedStatementHash String
+  createdAt             DateTime                        @default(now())
+  publication           ProjectPublication              @relation(fields: [publicationId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
+  claim                 EvidenceClaim                   @relation(fields: [claimId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
+  evidenceDisclosures   PublicationEvidenceDisclosure[]
+
+  @@id([publicationId, claimId])
+  @@unique([publicationId, position])
+  @@index([claimId])
+  @@index([trackedRepositoryId])
+}
+
+model PublicationEvidenceDisclosure {
+  publicationId        String
+  claimId              String
+  repositoryEvidenceId String
+  trackedRepositoryId  String
+  position             Int
+  mode                 EvidenceDisclosureMode
+  publicTitle          String?
+  includeOccurredAt    Boolean                   @default(true)
+  sourceContentHash    String
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  publication          ProjectPublication        @relation(fields: [publicationId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
+  claimSelection       PublicationClaimSelection @relation(fields: [publicationId, claimId], references: [publicationId, claimId], onDelete: Cascade)
+  repositoryEvidence   RepositoryEvidence        @relation(fields: [repositoryEvidenceId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
+
+  @@id([publicationId, claimId, repositoryEvidenceId])
+  @@unique([publicationId, claimId, position])
+  @@index([repositoryEvidenceId])
+  @@index([trackedRepositoryId])
+}
+
+model ProjectPublicationRevision {
+  id                         String                        @id @default(cuid())
+  publicationId              String
+  revisionNumber             Int
+  title                      String
+  summary                    String
+  roleText                   String
+  projectPeriodText          String?
+  technologyLabels           String[]                      @default([])
+  problemText                String?
+  approachText               String?
+  outcomeText                String?
+  repositoryDisclosurePolicy RepositoryDisclosurePolicy
+  publicRepositoryLabel      String?
+  publicRepositoryUrl        String?
+  authorSlug                 String
+  authorDisplayName          String
+  authorHeadline             String
+  authorBiography            String
+  authorLocationText         String?
+  authorPersonalWebsiteUrl   String?
+  authorGithubProfileUrl     String?
+  visibility                 PublicationVisibility
+  publishedByUserId          String
+  publishedAt                DateTime                      @default(now())
+  contentHash                String
+  schemaVersion              Int                           @default(1)
+  supersededAt               DateTime?
+  createdAt                  DateTime                      @default(now())
+  publication                ProjectPublication            @relation("PublicationRevisions", fields: [publicationId], references: [id], onDelete: Cascade)
+  currentForPublication      ProjectPublication?           @relation("CurrentPublicationRevision")
+  publishedBy                User                          @relation(fields: [publishedByUserId], references: [id], onDelete: Restrict)
+  claimSnapshots             PublicationClaimSnapshot[]
+  evidenceSnapshots          PublicationEvidenceSnapshot[]
+
+  @@unique([publicationId, revisionNumber])
+  @@index([publicationId, publishedAt])
+  @@index([visibility, publishedAt])
+  @@index([publishedByUserId, publishedAt])
+}
+
+model PublicationClaimSnapshot {
+  id                    String                        @id @default(cuid())
+  publicationRevisionId String
+  sourceClaimId         String
+  publicClaimIdentifier String
+  position              Int
+  statement             String
+  statementHash         String
+  claimOrigin           ClaimOrigin
+  verifiedAt            DateTime
+  humanEdited           Boolean                       @default(false)
+  createdAt             DateTime                      @default(now())
+  publicationRevision   ProjectPublicationRevision    @relation(fields: [publicationRevisionId], references: [id], onDelete: Cascade)
+  sourceClaim           EvidenceClaim                 @relation(fields: [sourceClaimId], references: [id], onDelete: Restrict)
+  evidenceSnapshots     PublicationEvidenceSnapshot[]
+
+  @@unique([publicationRevisionId, position])
+  @@unique([publicationRevisionId, publicClaimIdentifier])
+  @@index([sourceClaimId])
+}
+
+model PublicationEvidenceSnapshot {
+  id                         String                     @id @default(cuid())
+  publicationRevisionId      String
+  publicationClaimSnapshotId String
+  sourceRepositoryEvidenceId String
+  publicDisclosureIdentifier String
+  position                   Int
+  evidenceType               String
+  publicTitle                String
+  occurredAt                 DateTime?
+  disclosureMode             EvidenceDisclosureMode
+  canonicalPublicSourceUrl   String?
+  sourceVisibility           String
+  publicProvenanceText       String
+  confidence                 String                     @default("FACT")
+  sourceContentHash          String
+  contentHash                String
+  createdAt                  DateTime                   @default(now())
+  publicationRevision        ProjectPublicationRevision @relation(fields: [publicationRevisionId], references: [id], onDelete: Cascade)
+  publicationClaimSnapshot   PublicationClaimSnapshot   @relation(fields: [publicationClaimSnapshotId], references: [id], onDelete: Cascade)
+  sourceRepositoryEvidence   RepositoryEvidence         @relation(fields: [sourceRepositoryEvidenceId], references: [id], onDelete: Restrict)
+
+  @@unique([publicationClaimSnapshotId, position])
+  @@unique([publicationRevisionId, publicDisclosureIdentifier])
+  @@index([publicationRevisionId])
+  @@index([sourceRepositoryEvidenceId])
+}
+
+model PublicationEvent {
+  id            String               @id @default(cuid())
+  workspaceId   String
+  publicationId String?
+  actorUserId   String?
+  kind          PublicationEventKind
+  safeMetadata  Json?
+  createdAt     DateTime             @default(now())
+  workspace     Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  publication   ProjectPublication?  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  actor         User?                @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([publicationId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model PortfolioOutput {
+  id                  String                    @id @default(cuid())
+  workspaceId         String
+  trackedRepositoryId String
+  type                PortfolioOutputType
+  title               String
+  status              PortfolioOutputStatus     @default(DRAFT)
+  draftFields         Json
+  currentRevisionId   String?                   @unique
+  archivedAt          DateTime?
+  version             Int                       @default(1)
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  workspace           Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  trackedRepository   TrackedRepository         @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  currentRevision     PortfolioOutputRevision?  @relation("CurrentPortfolioOutputRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull)
+  revisions           PortfolioOutputRevision[] @relation("PortfolioOutputRevisions")
+  claimSelections     PortfolioOutputClaim[]
+
+  @@unique([id, trackedRepositoryId])
+  @@index([workspaceId, status, updatedAt])
+  @@index([trackedRepositoryId, type])
+}
+
+model PortfolioOutputClaim {
+  outputId            String
+  claimId             String
+  trackedRepositoryId String
+  position            Int
+  statementOverride   String?
+  createdAt           DateTime        @default(now())
+  output              PortfolioOutput @relation(fields: [outputId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
+  claim               EvidenceClaim   @relation(fields: [claimId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Restrict)
+
+  @@id([outputId, claimId])
+  @@unique([outputId, position])
+  @@index([claimId])
+  @@index([trackedRepositoryId])
+}
+
+model PortfolioOutputRevision {
+  id                String           @id @default(cuid())
+  outputId          String
+  revisionNumber    Int
+  templateVersion   Int              @default(1)
+  claimSnapshots    Json
+  userFields        Json
+  structuredContent Json
+  renderedText      String
+  renderedMarkdown  String
+  contentHash       String
+  createdByUserId   String
+  createdAt         DateTime         @default(now())
+  output            PortfolioOutput  @relation("PortfolioOutputRevisions", fields: [outputId], references: [id], onDelete: Cascade)
+  currentForOutput  PortfolioOutput? @relation("CurrentPortfolioOutputRevision")
+  createdBy         User             @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([outputId, revisionNumber])
+  @@index([createdByUserId, createdAt])
 }

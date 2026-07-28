@@ -12,6 +12,10 @@ import { getPrisma } from "@/lib/db/prisma";
 import { beginInstallation } from "@/lib/github-app/flow";
 import { discoverInstallationRepositories } from "@/lib/github-app/client";
 import { synchronizeTrackedRepository } from "@/lib/repositories/sync";
+import {
+  invalidatePublicationRemoval,
+  prepareRepositoryPublicationRemoval,
+} from "@/lib/publishing/health-service";
 
 export async function connectGitHubAction() {
   const { session, workspace } = await requireWorkspaceOwner();
@@ -152,7 +156,53 @@ export async function disconnectGitHubAction(formData: FormData) {
   const installationId = String(formData.get("installationId") ?? "");
   const { installation, workspace, session } =
     await getAuthorizedInstallation(installationId);
-  await getPrisma().$transaction(async (tx) => {
+  const removedPublications = await getPrisma().$transaction(async (tx) => {
+    const repositories = await tx.trackedRepository.findMany({
+      where: {
+        workspaceId: workspace.id,
+        githubInstallationId: installation.id,
+      },
+      select: { id: true },
+    });
+    const invalidation = await prepareRepositoryPublicationRemoval(
+      tx,
+      { workspaceId: workspace.id, userId: session.user.id },
+      repositories.map((repository) => repository.id),
+    );
+    await tx.projectPublication.updateMany({
+      where: {
+        workspaceId: workspace.id,
+        trackedRepositoryId: {
+          in: repositories.map((repository) => repository.id),
+        },
+      },
+      data: { currentPublishedRevisionId: null },
+    });
+    await tx.projectPublication.deleteMany({
+      where: {
+        workspaceId: workspace.id,
+        trackedRepositoryId: {
+          in: repositories.map((repository) => repository.id),
+        },
+      },
+    });
+    await tx.portfolioOutput.updateMany({
+      where: {
+        workspaceId: workspace.id,
+        trackedRepositoryId: {
+          in: repositories.map((repository) => repository.id),
+        },
+      },
+      data: { currentRevisionId: null },
+    });
+    await tx.portfolioOutput.deleteMany({
+      where: {
+        workspaceId: workspace.id,
+        trackedRepositoryId: {
+          in: repositories.map((repository) => repository.id),
+        },
+      },
+    });
     await tx.gitHubConnectionAttempt.deleteMany({
       where: { workspaceId: workspace.id },
     });
@@ -164,7 +214,9 @@ export async function disconnectGitHubAction(formData: FormData) {
         type: "github.connection.disconnected",
       },
     });
+    return invalidation;
   });
+  invalidatePublicationRemoval(removedPublications);
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/github");
   revalidatePath("/dashboard/repositories");
@@ -175,11 +227,46 @@ export async function deleteAccountAction(formData: FormData) {
     throw new Error("CONFIRMATION_REQUIRED");
   const { session } = await requireWorkspaceOwner();
   const prisma = getPrisma();
-  await prisma.$transaction(async (tx) => {
+  const removedPublications = await prisma.$transaction(async (tx) => {
+    const workspace = await tx.workspace.findUnique({
+      where: { ownerUserId: session.user.id },
+      include: {
+        publicProfile: { select: { slug: true } },
+        projectPublications: { select: { slug: true } },
+      },
+    });
     await tx.auditEvent.create({
       data: { userId: session.user.id, type: "account.deletion.requested" },
     });
+    if (workspace) {
+      await tx.projectPublication.updateMany({
+        where: { workspaceId: workspace.id },
+        data: { currentPublishedRevisionId: null },
+      });
+      await tx.projectPublication.deleteMany({
+        where: { workspaceId: workspace.id },
+      });
+      await tx.portfolioOutput.updateMany({
+        where: { workspaceId: workspace.id },
+        data: { currentRevisionId: null },
+      });
+      await tx.portfolioOutput.deleteMany({
+        where: { workspaceId: workspace.id },
+      });
+      await tx.publicProfile.deleteMany({
+        where: { workspaceId: workspace.id },
+      });
+    }
     await tx.user.delete({ where: { id: session.user.id } });
+    return {
+      profileSlugs: workspace?.publicProfile
+        ? [workspace.publicProfile.slug]
+        : [],
+      projectSlugs:
+        workspace?.projectPublications.map((publication) => publication.slug) ??
+        [],
+    };
   });
+  invalidatePublicationRemoval(removedPublications);
   redirect("/account-deleted");
 }
