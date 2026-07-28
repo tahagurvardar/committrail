@@ -64,7 +64,7 @@ suite("Phase 5 PostgreSQL publishing and portfolio outputs", () => {
     });
     const owner = await prisma.user.create({
       data: {
-        id: "phase5-owner",
+        id: "phase5-user-record",
         name: "Phase 5 Owner",
         email: "phase5-owner@example.test",
       },
@@ -410,7 +410,7 @@ suite("Phase 5 PostgreSQL publishing and portfolio outputs", () => {
         { workspaceId, userId },
         {
           ...privatePublicationInput(),
-          slug: `rejected-${status.toLowerCase()}`,
+          slug: `rejected-${status.toLowerCase().replaceAll("_", "-")}`,
           claims: [
             {
               claimId: claim.id,

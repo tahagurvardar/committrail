@@ -32,7 +32,7 @@ export async function claimIngestionJobs(input?: {
   );
   const now = input?.now ?? new Date();
   const leaseExpiresAt = new Date(now.getTime() + INGESTION_LEASE_MS);
-  const claimed = await prisma.$queryRaw<Array<{ id: string }>>`
+  return prisma.$queryRaw<IngestionJob[]>`
     WITH candidates AS (
       SELECT "id"
       FROM "IngestionJob"
@@ -55,13 +55,8 @@ export async function claimIngestionJobs(input?: {
       "updatedAt" = ${now}
     FROM candidates
     WHERE job."id" = candidates."id"
-    RETURNING job."id"
+    RETURNING job.*
   `;
-  if (!claimed.length) return [];
-  return prisma.ingestionJob.findMany({
-    where: { id: { in: claimed.map((item) => item.id) } },
-    orderBy: { createdAt: "asc" },
-  });
 }
 
 export async function processIngestionJob(
