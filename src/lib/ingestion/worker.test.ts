@@ -7,6 +7,7 @@ import {
   ingestionBackoffMs,
 } from "@/lib/ingestion/worker";
 import { PublicRepositoryProviderError } from "@/lib/github/errors";
+import { DraftingError } from "@/lib/drafting/errors";
 
 describe("ingestion worker policy", () => {
   it("uses a bounded batch, concurrency, and stale lease", () => {
@@ -76,6 +77,30 @@ describe("ingestion worker policy", () => {
     ).toMatchObject({
       code: "INGESTION_FAILURE",
       retryable: true,
+    });
+  });
+
+  it("preserves only typed drafting retry metadata", () => {
+    const retryAt = new Date(Date.now() + 30_000);
+    expect(
+      classifyIngestionError(
+        new DraftingError("DRAFT_PROVIDER_RATE_LIMITED", {
+          retryable: true,
+          retryAt,
+        }),
+      ),
+    ).toEqual({
+      code: "DRAFT_PROVIDER_RATE_LIMITED",
+      retryable: true,
+      retryAt,
+    });
+    expect(
+      classifyIngestionError(
+        new DraftingError("DRAFT_OUTPUT_UNKNOWN_CITATION"),
+      ),
+    ).toMatchObject({
+      code: "DRAFT_OUTPUT_UNKNOWN_CITATION",
+      retryable: false,
     });
   });
 });

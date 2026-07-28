@@ -1,9 +1,9 @@
-# Human-authored evidence claims
+# Private evidence claims
 
-Phase 3 claims are private, repository-scoped, and written only by the
-workspace owner. Statements are control-stripped plain text from 1 to 500
-characters; HTML and Markdown are rendered as text. There are no model,
-embedding, drafting, publishing, or public-profile fields.
+Claims are private, repository-scoped, and controlled only by the workspace
+owner. Statements are control-stripped plain text from 1 to 500 characters;
+HTML and Markdown are rendered as text. Claims record `HUMAN` or
+`AI_ASSISTED` origin, but have no publication or public-profile state.
 
 States are DRAFT, NEEDS_EVIDENCE, VERIFIED, and ARCHIVED. A claim with no
 links is NEEDS_EVIDENCE. Verification requires at least one available
@@ -23,3 +23,11 @@ shows first/last seen and observation provenance, and discloses its bounded
 sample. Claim detail provides an evidence picker, safe GitHub links, revision
 history, explicit review controls, an accessible SVG relationship view, and
 a complete textual graph equivalent.
+
+Phase 4 candidates are not claims. Explicit acceptance links cited evidence and
+creates or replaces a private claim with `AI_ASSISTED` origin and `DRAFT`
+status. It never starts verified. Replacing a verified claim clears
+verification; later human editing is recorded without erasing origin.
+AI-assisted claim pages show candidate provenance, stale-evidence warnings, and
+a review checklist. Verification remains an explicit evidence-linked owner
+action.

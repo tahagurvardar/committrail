@@ -5,8 +5,9 @@ Sessions are database-backed; Phase 3 sends no email.
 
 Versioned export contains owned identity/workspace data, non-secret
 installation metadata, tracked repositories, normalized snapshots/evidence,
-observations, human-authored claims/links/revisions, sync history, delivery
-and job state, and minimal audit events. It excludes password hashes,
+observations, claims/links/revisions, drafting consents, validated candidates,
+sentence citations, review history, sync history, delivery and job state, and
+minimal audit events. It excludes password hashes,
 sessions, cookies, tokens, keys, secrets, signatures, OAuth/PKCE material,
 authorization headers, webhook/API bodies, and private content bodies.
 
@@ -18,4 +19,11 @@ no new evidence is fetched.
 
 Confirmed account deletion removes the user-owned relational graph,
 including sessions, deliveries, jobs, observations, claims, and revisions.
-There is no public publication state to clean up in Phase 3.
+It also removes drafting consent history, generation requests, selected
+evidence references, candidates, sentence citations, review events, and
+AI-assisted claim relationships. There is no public publication state.
+
+GitHub disconnect deletes installation-owned tracked repositories under the
+existing private-data policy. Repository-scoped drafts, candidates, claims, and
+citations cascade with those repositories; provider consent remains
+workspace-level until revoked or the account is deleted.

@@ -44,6 +44,17 @@ export default async function ClaimDetailPage({
         orderBy: { revisionNumber: "desc" },
         include: { actor: { select: { name: true } } },
       },
+      sourceCandidate: {
+        include: {
+          request: {
+            include: {
+              evidenceSelections: {
+                include: { repositoryEvidence: true },
+              },
+            },
+          },
+        },
+      },
     },
   });
   if (!claim) notFound();
@@ -60,6 +71,14 @@ export default async function ClaimDetailPage({
     take: 50,
   });
   const archived = claim.status === "ARCHIVED";
+  const sourceEvidenceStale =
+    claim.sourceCandidate?.groundingStatus === "STALE" ||
+    claim.sourceCandidate?.request.evidenceSelections.some(
+      (selection) =>
+        selection.repositoryEvidence.sourceAvailability !== "AVAILABLE" ||
+        selection.repositoryEvidence.normalizedContentHash !==
+          selection.evidenceContentHash,
+    );
   return (
     <section>
       <Link
@@ -70,7 +89,14 @@ export default async function ClaimDetailPage({
       </Link>
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm text-primary">Owner-reviewed claim</p>
+          <p className="text-sm text-primary">
+            Owner-reviewed claim ·{" "}
+            {claim.origin === "AI_ASSISTED"
+              ? claim.humanEditedAfterAcceptance
+                ? "AI-assisted origin, human edited"
+                : "AI-assisted origin"
+              : "human origin"}
+          </p>
           <h1 className="mt-1 text-3xl font-semibold">{claim.statement}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {claim.status} · version {claim.version} · author{" "}
@@ -97,6 +123,28 @@ export default async function ClaimDetailPage({
         VERIFIED means reviewed by this workspace owner. It is not independent
         certification or a guarantee of truth.
       </aside>
+      {claim.origin === "AI_ASSISTED" && (
+        <aside className="mt-4 rounded-xl border bg-card p-4 text-sm">
+          <strong>AI-assisted provenance.</strong> Review the wording, every
+          evidence link, unsupported claims, and provider caveats before
+          explicit verification.
+          {claim.sourceCandidate && (
+            <Link
+              href={`/dashboard/repositories/${repository.id}/drafts/${claim.sourceCandidate.requestId}`}
+              className="ml-2 text-primary underline"
+            >
+              Open accepted candidate
+            </Link>
+          )}
+        </aside>
+      )}
+      {sourceEvidenceStale && (
+        <aside className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          Evidence used by the accepted candidate changed or became unavailable.
+          The claim remains historical and is not deleted; review its current
+          links before verification.
+        </aside>
+      )}
       {!archived && (
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <form
@@ -146,6 +194,22 @@ export default async function ClaimDetailPage({
               <option value="draft">Return to draft</option>
               <option value="needs-evidence">Mark needs evidence</option>
             </select>
+            {claim.origin === "AI_ASSISTED" && (
+              <fieldset className="mt-4 space-y-2 text-sm">
+                <legend className="font-medium">Human review checklist</legend>
+                {[
+                  "Wording reviewed",
+                  "Evidence links reviewed",
+                  "Unsupported claims removed",
+                  "Caveats considered",
+                ].map((label) => (
+                  <label key={label} className="flex items-center gap-2">
+                    <input type="checkbox" required />
+                    {label}
+                  </label>
+                ))}
+              </fieldset>
+            )}
             <button className="mt-3 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
               Apply review state
             </button>

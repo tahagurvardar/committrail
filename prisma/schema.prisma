@@ -62,6 +62,7 @@ enum IngestionJobKind {
   WORKFLOW_RUNS
   INSTALLATION_STATE
   INSTALLATION_REPOSITORIES
+  GROUNDED_DRAFT
 }
 
 enum IngestionJobStatus {
@@ -100,26 +101,89 @@ enum ClaimRevisionKind {
   VERIFIED
   ARCHIVED
   RESTORED
+  DRAFT_ACCEPTED
+  HUMAN_EDIT_AFTER_ACCEPTANCE
+}
+
+enum ClaimOrigin {
+  HUMAN
+  AI_ASSISTED
+}
+
+enum DraftProviderKind {
+  OPENAI_COMPATIBLE
+  FIXTURE
+}
+
+enum DraftProviderClassification {
+  LOCAL
+  EXTERNAL
+}
+
+enum DraftStyle {
+  CONCISE
+  TECHNICAL
+  INTERVIEW
+}
+
+enum DraftGenerationStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum DraftGroundingStatus {
+  VALID
+  INVALID
+  STALE
+}
+
+enum DraftReviewStatus {
+  READY
+  ACCEPTED
+  REJECTED
+  SUPERSEDED
+  INVALID
+}
+
+enum DraftReviewEventKind {
+  GENERATION_QUEUED
+  GENERATION_STARTED
+  GENERATION_SUCCEEDED
+  GENERATION_FAILED
+  CANDIDATE_REJECTED
+  CANDIDATE_ACCEPTED
+  CLAIM_CREATED
+  CLAIM_REPLACED
+  HUMAN_EDITED
+  CONSENT_GRANTED
+  CONSENT_REVOKED
 }
 
 model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  ownedWorkspace Workspace? @relation("WorkspaceOwner")
-  memberships   WorkspaceMember[]
-  connectionAttempts GitHubConnectionAttempt[]
-  initiatedSyncRuns RepositorySyncRun[]
-  auditEvents   AuditEvent[]
-  authoredClaims EvidenceClaim[]
-  linkedClaimEvidence ClaimEvidence[]
-  claimRevisions ClaimRevision[]
+  id                       String                     @id
+  name                     String
+  email                    String                     @unique
+  emailVerified            Boolean                    @default(false)
+  image                    String?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  sessions                 Session[]
+  accounts                 Account[]
+  ownedWorkspace           Workspace?                 @relation("WorkspaceOwner")
+  memberships              WorkspaceMember[]
+  connectionAttempts       GitHubConnectionAttempt[]
+  initiatedSyncRuns        RepositorySyncRun[]
+  auditEvents              AuditEvent[]
+  authoredClaims           EvidenceClaim[]
+  linkedClaimEvidence      ClaimEvidence[]
+  claimRevisions           ClaimRevision[]
+  acceptedDraftingConsents WorkspaceDraftingConsent[]
+  draftGenerationRequests  DraftGenerationRequest[]
+  draftReviewEvents        DraftReviewEvent[]
+  reviewedDraftCandidates  DraftCandidate[]
 }
 
 model Session {
@@ -157,131 +221,135 @@ model Account {
 }
 
 model Verification {
-  id         String    @id
+  id         String   @id
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([identifier])
 }
 
 model Workspace {
-  id           String   @id @default(cuid())
-  name         String
-  slug         String   @unique
-  ownerUserId  String   @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  owner        User     @relation("WorkspaceOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
-  members      WorkspaceMember[]
-  connectionAttempts GitHubConnectionAttempt[]
-  installations GitHubInstallation[]
-  trackedRepositories TrackedRepository[]
-  auditEvents  AuditEvent[]
-  webhookDeliveries WebhookDelivery[]
-  ingestionJobs IngestionJob[]
-  evidenceClaims EvidenceClaim[]
+  id                      String                     @id @default(cuid())
+  name                    String
+  slug                    String                     @unique
+  ownerUserId             String                     @unique
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+  owner                   User                       @relation("WorkspaceOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  members                 WorkspaceMember[]
+  connectionAttempts      GitHubConnectionAttempt[]
+  installations           GitHubInstallation[]
+  trackedRepositories     TrackedRepository[]
+  auditEvents             AuditEvent[]
+  webhookDeliveries       WebhookDelivery[]
+  ingestionJobs           IngestionJob[]
+  evidenceClaims          EvidenceClaim[]
+  draftingConsents        WorkspaceDraftingConsent[]
+  draftGenerationRequests DraftGenerationRequest[]
+  draftReviewEvents       DraftReviewEvent[]
 }
 
 model WorkspaceMember {
   workspaceId String
   userId      String
   role        WorkspaceRole @default(MEMBER)
-  createdAt   DateTime @default(now())
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([workspaceId, userId])
   @@index([userId])
 }
 
 model GitHubConnectionAttempt {
-  id                    String @id @default(cuid())
+  id                    String                @id @default(cuid())
   workspaceId           String
   initiatingUserId      String
   stage                 GitHubConnectionStage
-  stateHash             String @unique
+  stateHash             String                @unique
   encryptedPkceVerifier String?
   pendingInstallationId BigInt?
   expiresAt             DateTime
   consumedAt            DateTime?
-  createdAt             DateTime @default(now())
-  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  initiatingUser        User @relation(fields: [initiatingUserId], references: [id], onDelete: Cascade)
+  createdAt             DateTime              @default(now())
+  workspace             Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  initiatingUser        User                  @relation(fields: [initiatingUserId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, expiresAt])
   @@index([initiatingUserId])
 }
 
 model GitHubInstallation {
-  id                    String @id @default(cuid())
-  workspaceId           String
-  installationId        BigInt @unique
-  accountId             BigInt
-  accountLogin          String
-  accountType           String
-  repositorySelection   RepositorySelection
-  permissions           Json
-  suspendedAt           DateTime?
-  verifiedAt            DateTime
+  id                        String              @id @default(cuid())
+  workspaceId               String
+  installationId            BigInt              @unique
+  accountId                 BigInt
+  accountLogin              String
+  accountType               String
+  repositorySelection       RepositorySelection
+  permissions               Json
+  suspendedAt               DateTime?
+  verifiedAt                DateTime
   lastRepositoryDiscoveryAt DateTime?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  repositories          TrackedRepository[]
-  webhookDeliveries     WebhookDelivery[]
-  ingestionJobs         IngestionJob[]
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  workspace                 Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  repositories              TrackedRepository[]
+  webhookDeliveries         WebhookDelivery[]
+  ingestionJobs             IngestionJob[]
 
   @@index([workspaceId])
 }
 
 model TrackedRepository {
-  id                    String @id @default(cuid())
-  workspaceId           String
-  githubInstallationId  String?
-  githubRepositoryId    BigInt
-  ownerLogin            String
-  name                  String
-  fullName              String
-  visibility            String
-  defaultBranch         String
-  archived              Boolean @default(false)
-  fork                  Boolean @default(false)
-  sourceType            RepositorySource
-  trackingStatus        TrackingStatus @default(ACTIVE)
-  lastSuccessfulSyncAt  DateTime?
-  latestSyncStatus      SyncStatus?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  installation          GitHubInstallation? @relation(fields: [githubInstallationId], references: [id], onDelete: Cascade)
-  snapshot              RepositorySnapshot?
-  evidence              RepositoryEvidence[]
-  syncRuns              RepositorySyncRun[]
-  webhookDeliveries     WebhookDelivery[]
-  ingestionJobs         IngestionJob[]
-  ingestionCursors      RepositoryIngestionCursor[]
-  evidenceClaims        EvidenceClaim[]
+  id                      String                      @id @default(cuid())
+  workspaceId             String
+  githubInstallationId    String?
+  githubRepositoryId      BigInt
+  ownerLogin              String
+  name                    String
+  fullName                String
+  visibility              String
+  defaultBranch           String
+  archived                Boolean                     @default(false)
+  fork                    Boolean                     @default(false)
+  sourceType              RepositorySource
+  trackingStatus          TrackingStatus              @default(ACTIVE)
+  lastSuccessfulSyncAt    DateTime?
+  latestSyncStatus        SyncStatus?
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+  workspace               Workspace                   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  installation            GitHubInstallation?         @relation(fields: [githubInstallationId], references: [id], onDelete: Cascade)
+  snapshot                RepositorySnapshot?
+  evidence                RepositoryEvidence[]
+  syncRuns                RepositorySyncRun[]
+  webhookDeliveries       WebhookDelivery[]
+  ingestionJobs           IngestionJob[]
+  ingestionCursors        RepositoryIngestionCursor[]
+  evidenceClaims          EvidenceClaim[]
+  draftGenerationRequests DraftGenerationRequest[]
 
   @@unique([workspaceId, githubRepositoryId])
   @@index([githubInstallationId])
 }
 
 model RepositorySnapshot {
-  id                    String @id @default(cuid())
-  trackedRepositoryId   String @unique
-  normalizedData        Json
-  sourceUpdatedAt       DateTime
-  sourcePushedAt        DateTime?
-  fetchedAt             DateTime
-  schemaVersion         Int @default(1)
-  trackedRepository     TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  id                  String            @id @default(cuid())
+  trackedRepositoryId String            @unique
+  normalizedData      Json
+  sourceUpdatedAt     DateTime
+  sourcePushedAt      DateTime?
+  fetchedAt           DateTime
+  schemaVersion       Int               @default(1)
+  trackedRepository   TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
 }
 
 model RepositoryEvidence {
-  id                    String @id @default(cuid())
+  id                    String                     @id @default(cuid())
   trackedRepositoryId   String
   evidenceId            String
   evidenceType          String
@@ -289,17 +357,18 @@ model RepositoryEvidence {
   canonicalUrl          String
   occurredAt            DateTime
   title                 String
-  sourceLabel           String @default("GitHub")
-  confidence            String @default("fact")
+  sourceLabel           String                     @default("GitHub")
+  confidence            String                     @default("fact")
   factualPayload        Json
-  normalizedContentHash String @default("")
+  normalizedContentHash String                     @default("")
   sourceAvailability    EvidenceSourceAvailability @default(AVAILABLE)
   sourceUnavailableAt   DateTime?
-  firstSeenAt           DateTime @default(now())
-  lastSeenAt            DateTime @default(now())
-  trackedRepository     TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  firstSeenAt           DateTime                   @default(now())
+  lastSeenAt            DateTime                   @default(now())
+  trackedRepository     TrackedRepository          @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
   observations          EvidenceObservation[]
   claimLinks            ClaimEvidence[]
+  draftSelections       DraftGenerationEvidence[]
 
   @@unique([trackedRepositoryId, evidenceId])
   @@unique([id, trackedRepositoryId])
@@ -308,54 +377,54 @@ model RepositoryEvidence {
 }
 
 model RepositorySyncRun {
-  id                    String @id @default(cuid())
-  trackedRepositoryId   String
-  initiatingUserId      String
-  mode                  SyncMode
-  status                SyncStatus
-  startedAt             DateTime @default(now())
-  completedAt           DateTime?
-  sanitizedErrorCode    String?
-  insertedCount         Int @default(0)
-  updatedCount          Int @default(0)
-  seenCount             Int @default(0)
-  sectionAvailability   Json?
-  createdAt             DateTime @default(now())
-  trackedRepository     TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
-  initiatingUser        User @relation(fields: [initiatingUserId], references: [id], onDelete: Cascade)
-  observations          EvidenceObservation[]
+  id                  String                @id @default(cuid())
+  trackedRepositoryId String
+  initiatingUserId    String
+  mode                SyncMode
+  status              SyncStatus
+  startedAt           DateTime              @default(now())
+  completedAt         DateTime?
+  sanitizedErrorCode  String?
+  insertedCount       Int                   @default(0)
+  updatedCount        Int                   @default(0)
+  seenCount           Int                   @default(0)
+  sectionAvailability Json?
+  createdAt           DateTime              @default(now())
+  trackedRepository   TrackedRepository     @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  initiatingUser      User                  @relation(fields: [initiatingUserId], references: [id], onDelete: Cascade)
+  observations        EvidenceObservation[]
 
   @@index([trackedRepositoryId, status, createdAt])
   @@index([initiatingUserId])
 }
 
 model WebhookDelivery {
-  id                    String @id @default(cuid())
-  githubDeliveryId      String @unique
-  workspaceId           String?
-  githubInstallationId  String?
-  trackedRepositoryId   String?
-  ingestionJobId        String?
-  jobGeneration         Int @default(0)
-  eventName             String
-  action                String?
-  installationId        BigInt?
-  githubRepositoryId    BigInt?
-  payloadSha256         String
-  bodyByteCount         Int
-  duplicateCount        Int @default(0)
-  receivedAt            DateTime @default(now())
-  status                WebhookDeliveryStatus @default(RECEIVED)
-  ignoredReason         String?
-  processedAt           DateTime?
-  sanitizedErrorCode    String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  workspace             Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  installation          GitHubInstallation? @relation(fields: [githubInstallationId], references: [id], onDelete: SetNull)
-  trackedRepository     TrackedRepository? @relation(fields: [trackedRepositoryId], references: [id], onDelete: SetNull)
-  ingestionJob          IngestionJob? @relation(fields: [ingestionJobId], references: [id], onDelete: SetNull)
-  observations          EvidenceObservation[]
+  id                   String                @id @default(cuid())
+  githubDeliveryId     String                @unique
+  workspaceId          String?
+  githubInstallationId String?
+  trackedRepositoryId  String?
+  ingestionJobId       String?
+  jobGeneration        Int                   @default(0)
+  eventName            String
+  action               String?
+  installationId       BigInt?
+  githubRepositoryId   BigInt?
+  payloadSha256        String
+  bodyByteCount        Int
+  duplicateCount       Int                   @default(0)
+  receivedAt           DateTime              @default(now())
+  status               WebhookDeliveryStatus @default(RECEIVED)
+  ignoredReason        String?
+  processedAt          DateTime?
+  sanitizedErrorCode   String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  workspace            Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  installation         GitHubInstallation?   @relation(fields: [githubInstallationId], references: [id], onDelete: SetNull)
+  trackedRepository    TrackedRepository?    @relation(fields: [trackedRepositoryId], references: [id], onDelete: SetNull)
+  ingestionJob         IngestionJob?         @relation(fields: [ingestionJobId], references: [id], onDelete: SetNull)
+  observations         EvidenceObservation[]
 
   @@index([status, receivedAt])
   @@index([trackedRepositoryId, receivedAt])
@@ -364,29 +433,30 @@ model WebhookDelivery {
 }
 
 model IngestionJob {
-  id                    String @id @default(cuid())
-  workspaceId           String
-  trackedRepositoryId   String?
-  githubInstallationId  String?
-  kind                  IngestionJobKind
-  status                IngestionJobStatus @default(PENDING)
-  deduplicationKey      String
-  minimalPayload        Json
-  availableAt           DateTime @default(now())
-  attemptCount          Int @default(0)
-  maximumAttempts       Int @default(5)
-  leaseOwner            String?
-  leaseExpiresAt        DateTime?
-  startedAt             DateTime?
-  completedAt           DateTime?
+  id                     String                  @id @default(cuid())
+  workspaceId            String
+  trackedRepositoryId    String?
+  githubInstallationId   String?
+  kind                   IngestionJobKind
+  status                 IngestionJobStatus      @default(PENDING)
+  deduplicationKey       String
+  minimalPayload         Json
+  availableAt            DateTime                @default(now())
+  attemptCount           Int                     @default(0)
+  maximumAttempts        Int                     @default(5)
+  leaseOwner             String?
+  leaseExpiresAt         DateTime?
+  startedAt              DateTime?
+  completedAt            DateTime?
   sanitizedLastErrorCode String?
-  generation            Int @default(0)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  trackedRepository     TrackedRepository? @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
-  installation          GitHubInstallation? @relation(fields: [githubInstallationId], references: [id], onDelete: SetNull)
-  deliveries            WebhookDelivery[]
+  generation             Int                     @default(0)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  workspace              Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  trackedRepository      TrackedRepository?      @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  installation           GitHubInstallation?     @relation(fields: [githubInstallationId], references: [id], onDelete: SetNull)
+  deliveries             WebhookDelivery[]
+  draftGenerationRequest DraftGenerationRequest?
 
   @@index([status, availableAt])
   @@index([trackedRepositoryId, status])
@@ -395,18 +465,18 @@ model IngestionJob {
 }
 
 model EvidenceObservation {
-  id                    String @id @default(cuid())
+  id                    String                @id @default(cuid())
   repositoryEvidenceId  String
   sourceKind            ObservationSourceKind
   syncRunId             String?
   webhookDeliveryId     String?
   observedAt            DateTime
   normalizedContentHash String
-  deduplicationKey      String @unique
-  createdAt             DateTime @default(now())
-  repositoryEvidence    RepositoryEvidence @relation(fields: [repositoryEvidenceId], references: [id], onDelete: Cascade)
-  syncRun               RepositorySyncRun? @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
-  webhookDelivery       WebhookDelivery? @relation(fields: [webhookDeliveryId], references: [id], onDelete: SetNull)
+  deduplicationKey      String                @unique
+  createdAt             DateTime              @default(now())
+  repositoryEvidence    RepositoryEvidence    @relation(fields: [repositoryEvidenceId], references: [id], onDelete: Cascade)
+  syncRun               RepositorySyncRun?    @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
+  webhookDelivery       WebhookDelivery?      @relation(fields: [webhookDeliveryId], references: [id], onDelete: SetNull)
 
   @@index([repositoryEvidenceId, observedAt])
   @@index([webhookDeliveryId])
@@ -414,53 +484,57 @@ model EvidenceObservation {
 }
 
 model RepositoryIngestionCursor {
-  id                    String @id @default(cuid())
-  trackedRepositoryId   String
-  sourceKind            IngestionJobKind
-  lastSuccessfulAt      DateTime?
-  lastObservedSourceAt  DateTime?
-  etag                  String?
-  lastModified          String?
-  schemaVersion         Int @default(1)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  trackedRepository     TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  id                   String            @id @default(cuid())
+  trackedRepositoryId  String
+  sourceKind           IngestionJobKind
+  lastSuccessfulAt     DateTime?
+  lastObservedSourceAt DateTime?
+  etag                 String?
+  lastModified         String?
+  schemaVersion        Int               @default(1)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  trackedRepository    TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
 
   @@unique([trackedRepositoryId, sourceKind])
   @@index([lastSuccessfulAt])
 }
 
 model EvidenceClaim {
-  id                    String @id @default(cuid())
-  workspaceId           String
-  trackedRepositoryId   String
-  authorUserId          String
-  statement             String
-  status                ClaimStatus @default(NEEDS_EVIDENCE)
-  verifiedAt            DateTime?
-  version               Int @default(1)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  trackedRepository     TrackedRepository @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
-  author                User @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
-  evidenceLinks         ClaimEvidence[]
-  revisions             ClaimRevision[]
+  id                         String             @id @default(cuid())
+  workspaceId                String
+  trackedRepositoryId        String
+  authorUserId               String
+  statement                  String
+  status                     ClaimStatus        @default(NEEDS_EVIDENCE)
+  origin                     ClaimOrigin        @default(HUMAN)
+  humanEditedAfterAcceptance Boolean            @default(false)
+  verifiedAt                 DateTime?
+  version                    Int                @default(1)
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+  workspace                  Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  trackedRepository          TrackedRepository  @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  author                     User               @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+  evidenceLinks              ClaimEvidence[]
+  revisions                  ClaimRevision[]
+  sourceCandidate            DraftCandidate?    @relation("AcceptedCandidateClaim")
+  draftReviewEvents          DraftReviewEvent[]
 
+  @@unique([id, trackedRepositoryId])
   @@index([workspaceId, trackedRepositoryId, status])
   @@index([authorUserId, updatedAt])
-  @@unique([id, trackedRepositoryId])
 }
 
 model ClaimEvidence {
-  claimId               String
-  repositoryEvidenceId  String
-  trackedRepositoryId   String
-  linkedByUserId        String
-  createdAt             DateTime @default(now())
-  claim                 EvidenceClaim @relation(fields: [claimId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
-  repositoryEvidence    RepositoryEvidence @relation(fields: [repositoryEvidenceId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
-  linkedBy              User @relation(fields: [linkedByUserId], references: [id], onDelete: Cascade)
+  claimId              String
+  repositoryEvidenceId String
+  trackedRepositoryId  String
+  linkedByUserId       String
+  createdAt            DateTime           @default(now())
+  claim                EvidenceClaim      @relation(fields: [claimId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
+  repositoryEvidence   RepositoryEvidence @relation(fields: [repositoryEvidenceId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
+  linkedBy             User               @relation(fields: [linkedByUserId], references: [id], onDelete: Cascade)
 
   @@id([claimId, repositoryEvidenceId])
   @@index([repositoryEvidenceId])
@@ -469,33 +543,205 @@ model ClaimEvidence {
 }
 
 model ClaimRevision {
-  id                    String @id @default(cuid())
-  claimId               String
-  actorUserId           String
-  revisionNumber        Int
-  kind                  ClaimRevisionKind
-  statementSnapshot     String
-  status                ClaimStatus
-  evidenceIdSnapshot    String?
-  changeSummary         String
-  createdAt             DateTime @default(now())
-  claim                 EvidenceClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
-  actor                 User @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+  id                 String            @id @default(cuid())
+  claimId            String
+  actorUserId        String
+  revisionNumber     Int
+  kind               ClaimRevisionKind
+  statementSnapshot  String
+  status             ClaimStatus
+  evidenceIdSnapshot String?
+  changeSummary      String
+  createdAt          DateTime          @default(now())
+  claim              EvidenceClaim     @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  actor              User              @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
 
   @@unique([claimId, revisionNumber])
   @@index([actorUserId, createdAt])
 }
 
 model AuditEvent {
-  id          String @id @default(cuid())
+  id          String     @id @default(cuid())
   workspaceId String?
   userId      String?
   type        String
   metadata    Json?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime   @default(now())
   workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user        User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
   @@index([userId, createdAt])
+}
+
+model WorkspaceDraftingConsent {
+  id                     String                      @id @default(cuid())
+  workspaceId            String
+  consentVersion         Int
+  privacyPolicyVersion   Int
+  providerKind           DraftProviderKind
+  providerClassification DraftProviderClassification
+  providerIdentityHash   String
+  acceptedByUserId       String
+  acceptedAt             DateTime                    @default(now())
+  revokedAt              DateTime?
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+  workspace              Workspace                   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  acceptedBy             User                        @relation(fields: [acceptedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, consentVersion, privacyPolicyVersion, providerKind, providerClassification, providerIdentityHash], map: "WorkspaceDraftingConsent_workspaceId_consentVersion_privacy_idx")
+  @@index([workspaceId, revokedAt, acceptedAt])
+  @@index([acceptedByUserId, acceptedAt])
+}
+
+model DraftGenerationRequest {
+  id                     String                      @id @default(cuid())
+  workspaceId            String
+  trackedRepositoryId    String
+  requestedByUserId      String
+  ingestionJobId         String?                     @unique
+  regenerationOfId       String?
+  providerKind           DraftProviderKind
+  providerClassification DraftProviderClassification
+  providerIdentityHash   String
+  modelLabel             String
+  promptTemplateVersion  Int
+  evidenceBundleVersion  Int
+  evidenceBundleHash     String
+  draftingIntent         String
+  style                  DraftStyle
+  status                 DraftGenerationStatus       @default(QUEUED)
+  requestHash            String
+  queuedAt               DateTime                    @default(now())
+  startedAt              DateTime?
+  completedAt            DateTime?
+  sanitizedErrorCode     String?
+  inputEvidenceCount     Int
+  inputByteCount         Int
+  outputByteCount        Int?
+  requestDurationMs      Int?
+  inputTokenCount        Int?
+  outputTokenCount       Int?
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+  workspace              Workspace                   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  trackedRepository      TrackedRepository           @relation(fields: [trackedRepositoryId], references: [id], onDelete: Cascade)
+  requestedBy            User                        @relation(fields: [requestedByUserId], references: [id], onDelete: Cascade)
+  ingestionJob           IngestionJob?               @relation(fields: [ingestionJobId], references: [id], onDelete: SetNull)
+  regenerationOf         DraftGenerationRequest?     @relation("DraftRegeneration", fields: [regenerationOfId], references: [id], onDelete: SetNull)
+  regenerations          DraftGenerationRequest[]    @relation("DraftRegeneration")
+  evidenceSelections     DraftGenerationEvidence[]
+  candidate              DraftCandidate?
+  reviewEvents           DraftReviewEvent[]
+
+  @@unique([id, trackedRepositoryId])
+  @@index([workspaceId, trackedRepositoryId, status, createdAt])
+  @@index([workspaceId, requestedByUserId, createdAt])
+  @@index([requestHash, status])
+  @@index([ingestionJobId])
+}
+
+model DraftGenerationEvidence {
+  draftRequestId       String
+  repositoryEvidenceId String
+  trackedRepositoryId  String
+  evidenceContentHash  String
+  position             Int
+  createdAt            DateTime                @default(now())
+  draftRequest         DraftGenerationRequest  @relation(fields: [draftRequestId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
+  repositoryEvidence   RepositoryEvidence      @relation(fields: [repositoryEvidenceId, trackedRepositoryId], references: [id, trackedRepositoryId], onDelete: Cascade)
+  sentenceCitations    DraftSentenceEvidence[]
+
+  @@id([draftRequestId, repositoryEvidenceId, trackedRepositoryId])
+  @@unique([draftRequestId, position])
+  @@index([repositoryEvidenceId])
+  @@index([trackedRepositoryId])
+}
+
+model DraftCandidate {
+  id                          String                 @id @default(cuid())
+  requestId                   String                 @unique
+  candidateVersion            Int                    @default(1)
+  title                       String?
+  combinedStatement           String
+  caveats                     Json
+  policyWarnings              Json
+  confidence                  String                 @default("AI_ASSISTED_DRAFT")
+  groundingStatus             DraftGroundingStatus   @default(VALID)
+  reviewStatus                DraftReviewStatus      @default(READY)
+  sentenceCount               Int
+  citedSentenceCount          Int
+  uniqueEvidenceCount         Int
+  selectedEvidenceCount       Int
+  evidenceTypesUsed           Json
+  unusedSelectedEvidenceCount Int
+  acceptedClaimId             String?                @unique
+  reviewedByUserId            String?
+  acceptedAt                  DateTime?
+  rejectedAt                  DateTime?
+  rejectionReason             String?
+  createdAt                   DateTime               @default(now())
+  request                     DraftGenerationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  acceptedClaim               EvidenceClaim?         @relation("AcceptedCandidateClaim", fields: [acceptedClaimId], references: [id], onDelete: SetNull)
+  reviewedBy                  User?                  @relation(fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  sentences                   DraftSentence[]
+  reviewEvents                DraftReviewEvent[]
+
+  @@unique([id, requestId])
+  @@index([reviewStatus, createdAt])
+  @@index([groundingStatus, createdAt])
+}
+
+model DraftSentence {
+  id             String                  @id @default(cuid())
+  candidateId    String
+  draftRequestId String
+  position       Int
+  text           String
+  createdAt      DateTime                @default(now())
+  candidate      DraftCandidate          @relation(fields: [candidateId, draftRequestId], references: [id, requestId], onDelete: Cascade)
+  citations      DraftSentenceEvidence[]
+
+  @@unique([candidateId, position])
+  @@unique([id, draftRequestId])
+  @@index([draftRequestId])
+}
+
+model DraftSentenceEvidence {
+  draftSentenceId      String
+  draftRequestId       String
+  repositoryEvidenceId String
+  trackedRepositoryId  String
+  position             Int
+  createdAt            DateTime                @default(now())
+  draftSentence        DraftSentence           @relation(fields: [draftSentenceId, draftRequestId], references: [id, draftRequestId], onDelete: Cascade)
+  selectedEvidence     DraftGenerationEvidence @relation(fields: [draftRequestId, repositoryEvidenceId, trackedRepositoryId], references: [draftRequestId, repositoryEvidenceId, trackedRepositoryId], onDelete: Cascade)
+
+  @@id([draftSentenceId, repositoryEvidenceId])
+  @@unique([draftSentenceId, position])
+  @@index([draftRequestId, repositoryEvidenceId, trackedRepositoryId])
+}
+
+model DraftReviewEvent {
+  id             String                  @id @default(cuid())
+  workspaceId    String
+  draftRequestId String?
+  candidateId    String?
+  claimId        String?
+  actorUserId    String?
+  kind           DraftReviewEventKind
+  metadata       Json?
+  createdAt      DateTime                @default(now())
+  workspace      Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  draftRequest   DraftGenerationRequest? @relation(fields: [draftRequestId], references: [id], onDelete: Cascade)
+  candidate      DraftCandidate?         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  claim          EvidenceClaim?          @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  actor          User?                   @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([draftRequestId, createdAt])
+  @@index([candidateId, createdAt])
+  @@index([claimId, createdAt])
+  @@index([actorUserId, createdAt])
 }

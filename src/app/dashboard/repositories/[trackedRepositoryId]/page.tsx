@@ -15,24 +15,28 @@ export default async function TrackedRepositoryPage({
   const { trackedRepositoryId } = await params;
   const { repository } =
     await getAuthorizedTrackedRepository(trackedRepositoryId);
-  const [claimCount, observationCount, deliveries, jobs] = await Promise.all([
-    getPrisma().evidenceClaim.count({
-      where: { trackedRepositoryId: repository.id },
-    }),
-    getPrisma().evidenceObservation.count({
-      where: { repositoryEvidence: { trackedRepositoryId: repository.id } },
-    }),
-    getPrisma().webhookDelivery.findMany({
-      where: { trackedRepositoryId: repository.id },
-      orderBy: { receivedAt: "desc" },
-      take: 10,
-    }),
-    getPrisma().ingestionJob.findMany({
-      where: { trackedRepositoryId: repository.id },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-  ]);
+  const [claimCount, draftCount, observationCount, deliveries, jobs] =
+    await Promise.all([
+      getPrisma().evidenceClaim.count({
+        where: { trackedRepositoryId: repository.id },
+      }),
+      getPrisma().draftGenerationRequest.count({
+        where: { trackedRepositoryId: repository.id },
+      }),
+      getPrisma().evidenceObservation.count({
+        where: { repositoryEvidence: { trackedRepositoryId: repository.id } },
+      }),
+      getPrisma().webhookDelivery.findMany({
+        where: { trackedRepositoryId: repository.id },
+        orderBy: { receivedAt: "desc" },
+        take: 10,
+      }),
+      getPrisma().ingestionJob.findMany({
+        where: { trackedRepositoryId: repository.id },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+    ]);
   const webhook = getWebhookConfiguration();
   const snapshot = repository.snapshot?.normalizedData as
     Record<string, unknown> | undefined;
@@ -83,7 +87,7 @@ export default async function TrackedRepositoryPage({
         </article>
       </div>
       <nav
-        aria-label="Repository evidence and claims"
+        aria-label="Repository evidence, drafts, and claims"
         className="mt-6 flex flex-wrap gap-3"
       >
         <Link
@@ -91,6 +95,12 @@ export default async function TrackedRepositoryPage({
           className="rounded-md border px-4 py-2 text-sm font-medium"
         >
           Evidence library · {repository.evidence.length} shown
+        </Link>
+        <Link
+          href={`/dashboard/repositories/${repository.id}/drafts`}
+          className="rounded-md border px-4 py-2 text-sm font-medium"
+        >
+          Private drafts · {draftCount}
         </Link>
         <Link
           href={`/dashboard/repositories/${repository.id}/claims`}

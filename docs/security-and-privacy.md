@@ -51,5 +51,14 @@ Repository access removal marks local tracking inaccessible and cancels
 pending work. There are no GitHub write calls.
 
 CommitTrail never executes repository code, ranks developers, infers
-seniority/productivity, generates claims in Phase 3, or publishes private
-data.
+seniority/productivity, or publishes private data.
+
+Phase 4 may send only an explicitly selected normalized evidence bundle and
+bounded intent to a configured provider. Loopback is local; non-loopback HTTPS
+is external and requires exact current consent. HTTP to external hosts,
+credential-bearing URLs, redirects, unbounded bodies, browser provider calls,
+and client-selected endpoints are rejected.
+
+Raw prompts, provider responses/errors, authorization, secrets, hidden
+reasoning, and chain-of-thought are never persisted or logged. A structurally
+valid candidate is not guaranteed true and cannot auto-verify or auto-publish.

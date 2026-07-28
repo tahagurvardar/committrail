@@ -34,11 +34,17 @@ export default async function ClaimsPage({
       >
         Back to {repository.fullName}
       </Link>
-      <h1 className="mt-3 text-3xl font-semibold">Human-authored claims</h1>
+      <h1 className="mt-3 text-3xl font-semibold">Private reviewed claims</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Private statements reviewed by the workspace owner. CommitTrail does not
-        generate claim text.
+        Human-authored statements and explicitly accepted AI-assisted
+        suggestions. Only the workspace owner can review or verify them.
       </p>
+      <Link
+        href={`/dashboard/repositories/${repository.id}/drafts`}
+        className="mt-4 inline-block text-sm text-primary underline"
+      >
+        Open private grounded drafts
+      </Link>
       <form
         action={createClaimAction}
         className="mt-6 rounded-xl border bg-card p-5"
@@ -83,7 +89,12 @@ export default async function ClaimsPage({
                   {claim.statement}
                 </Link>
                 <span className="rounded-full border px-2 py-0.5 text-xs">
-                  {claim.status}
+                  {claim.status} ·{" "}
+                  {claim.origin === "AI_ASSISTED"
+                    ? claim.humanEditedAfterAcceptance
+                      ? "AI-assisted · human edited"
+                      : "AI-assisted"
+                    : "Human origin"}
                 </span>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">

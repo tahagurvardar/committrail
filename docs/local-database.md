@@ -24,3 +24,11 @@ The Phase 3 migration is
 `20260728203000_phase_3_webhook_ingestion_evidence_graph`. It includes the
 active-job partial unique index and composite same-repository claim/evidence
 foreign keys.
+
+Phase 4 adds
+`20260728221500_phase_4_grounded_drafting_review`. Apply it with
+`npm run db:migrate:deploy`. It adds consent history, generation requests,
+selected evidence, immutable candidates, normalized sentences/citations,
+review events, claim provenance, active-request partial indexes, and composite
+same-request/repository citation constraints. Integration tests require a
+separate PostgreSQL 17 URL whose database or schema name contains `test`.

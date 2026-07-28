@@ -1,6 +1,6 @@
 # CommitTrail — Architecture
 
-_Phase 3 revision._
+_Phase 4 revision._
 
 CommitTrail is one Next.js 16 App Router application. Public exploration and
 private workspace routes share normalized GitHub providers but keep separate
@@ -22,6 +22,9 @@ authorization and caching boundaries.
   normalized evidence/observation upserts.
 - `src/lib/claims`: owner-scoped transactional claim mutations, optimistic
   versions, revisions, and audit events.
+- `src/lib/drafting`: disabled-by-default provider configuration, minimized
+  canonical evidence bundles, versioned prompts, strict output/policy
+  validation, queued generation, consent, and candidate review.
 
 The webhook route performs no GitHub request. It returns `2xx` only after the
 delivery and an ignored or queued result are committed. Workers generate an
@@ -40,7 +43,14 @@ GitHub App delivery
   -> targeted existing GitHub provider/normalizer
   -> idempotent RepositoryEvidence upsert
   -> append-only EvidenceObservation
-  -> private owner-authored EvidenceClaim <-> ClaimEvidence graph
+  -> private EvidenceClaim <-> ClaimEvidence graph
+
+Explicit selected evidence + private intent
+  -> idempotent GROUNDED_DRAFT job
+  -> local or consented external provider
+  -> strict sentence/citation validation
+  -> immutable private candidate
+  -> explicit owner acceptance as an unverified claim
 ```
 
 Manual **Sync now** uses the same evidence persistence and adds
@@ -67,13 +77,22 @@ public caching.
 
 ## Decisions
 
-See `docs/decisions/0001` through `0013`, especially raw-body verification,
-the PostgreSQL queue, payload non-retention, human claims before drafting,
-and manual synchronization as webhook recovery.
+See `docs/decisions/0001` through `0019`, especially raw-body verification,
+the PostgreSQL queue, payload non-retention, explicit evidence selection,
+sentence citations, external consent, and the human verification boundary.
+
+Phase 4 adds a provider-neutral, server-only drafting boundary. The existing
+PostgreSQL worker leases `GROUNDED_DRAFT` jobs, verifies evidence versions and
+external consent, calls the configured provider outside a transaction, then
+persists only a validated candidate and normalized sentence citations.
+Provider configuration is lazy and disabled by default so builds and public
+routes need no model settings.
+
+All draft pages use authenticated Server Components/Actions with dynamic,
+private, no-store rendering. Public publishing, teams, billing, email delivery,
+Redis, paid queues, code execution, GitHub writes, ranking, productivity
+inference, and provider tool calls remain out of scope.
 
 ## Deferred
 
-Phase 4 may add grounded drafting behind the existing evidence and review
-boundaries. Public publishing, teams, billing, email delivery, Redis, paid
-queues, code execution, GitHub writes, ranking, and productivity inference
-are not part of Phase 3.
+Phase 5 may add deliberate publishing only from reviewed private claims.
