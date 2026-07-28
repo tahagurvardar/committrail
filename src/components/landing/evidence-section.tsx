@@ -15,7 +15,7 @@ export function EvidenceSection() {
           description="Claims are nodes in an evidence graph, permanently linked to the repository records that support them. If a claim cannot point at evidence, it does not publish."
         />
         <div className="mt-10 grid items-start gap-10 lg:grid-cols-[1.2fr_0.8fr]">
-          <EvidenceGraphPreview />
+          <EvidenceGraphPreview className="min-w-0" />
           <div>
             <h3 className="font-semibold tracking-tight">
               Seven kinds of evidence
