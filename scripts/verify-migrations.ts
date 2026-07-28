@@ -11,7 +11,7 @@ const migrations = (await readdir(migrationsRoot, { withFileTypes: true }))
   .map((entry) => entry.name)
   .sort();
 
-if (migrations.length < 4) throw new Error("MIGRATION_CHAIN_INCOMPLETE");
+if (migrations.length < 5) throw new Error("MIGRATION_CHAIN_INCOMPLETE");
 if (new Set(migrations).size !== migrations.length)
   throw new Error("MIGRATION_NAMES_NOT_UNIQUE");
 
@@ -49,7 +49,8 @@ try {
         'IngestionJob_active_deduplicationKey_key',
         'RepositoryEvidence_id_trackedRepositoryId_key',
         'ProjectPublication_slug_lower_key',
-        'PublicProfile_slug_lower_key'
+        'PublicProfile_slug_lower_key',
+        'rateLimit_key_key'
       )
   `;
   const triggers = await prisma.$queryRaw<Array<{ tgname: string }>>`
@@ -63,7 +64,7 @@ try {
         'PortfolioOutputRevision_immutable'
       )
   `;
-  if (indexes.length !== 4 || triggers.length !== 4)
+  if (indexes.length !== 5 || triggers.length !== 4)
     throw new Error("CUSTOM_DATABASE_GUARDS_MISSING");
   process.stdout.write(
     `${JSON.stringify({

@@ -6,7 +6,8 @@ the exact final `main` commit after merge.
 ## Code and data
 
 - [x] Package and lockfile version are `1.0.0`.
-- [x] Migrations are forward-only, ordered, non-empty, and deploy cleanly.
+- [x] Migrations, including Better Auth rate-limit persistence, are
+      forward-only, ordered, non-empty, and deploy cleanly.
 - [x] Required immutable triggers and operational indexes are verified.
 - [x] Queue leases, bounded retries, job timeouts, and graceful shutdown exist.
 - [x] Backup and guarded restore commands are documented.
