@@ -30,7 +30,7 @@ test("registration surfaces generic errors without account enumeration", async (
   await page.getByLabel("Email").fill(E2E_USER.email);
   await page.getByLabel("Password").fill(E2E_USER.password);
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page.getByRole("alert")).toContainText(
+  await expect(page.locator("#auth-error")).toContainText(
     "We could not complete that request",
   );
 });

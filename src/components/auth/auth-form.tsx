@@ -90,6 +90,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       </label>
       {error && (
         <p
+          id="auth-error"
           role="alert"
           className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm"
         >

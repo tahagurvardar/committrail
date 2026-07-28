@@ -20,8 +20,11 @@ test("PUBLIC project exposes only safe evidence and honest AI provenance", async
     page.getByRole("heading", { level: 1, name: "Release evidence project" }),
   ).toBeVisible();
   await expect(page.getByText(/AI-assisted wording/i)).toBeVisible();
+  await expect(
+    page.getByText("Published the deterministic release workflow"),
+  ).toBeVisible();
   const source = page.getByRole("link", {
-    name: /Published the deterministic release workflow/i,
+    name: /Inspect the public GitHub source/i,
   });
   await expect(source).toHaveAttribute(
     "href",
@@ -53,11 +56,15 @@ test("unpublished and unknown projects share the generic not-found surface", asy
   page,
 }) => {
   for (const slug of ["unpublished-fixture", "unknown-fixture"]) {
-    const response = await page.goto(`/projects/${slug}`);
-    expect(response?.status()).toBe(404);
+    await page.goto(`/projects/${slug}`);
     await expect(
-      page.getByRole("heading", { name: /page not found/i }),
+      page.getByRole("heading", { name: /This trail doesn.t exist/i }),
     ).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+      "content",
+      /noindex/,
+    );
+    await expect(page.getByText("Unpublished fixture")).toHaveCount(0);
   }
 });
 

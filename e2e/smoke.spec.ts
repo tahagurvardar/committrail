@@ -35,6 +35,8 @@ test("invalid explorer input is rejected without an external request", async ({
   await page.goto("/explore");
   await page.getByLabel(/repository/i).fill("https://example.test/private");
   await page.getByRole("button", { name: /snapshot/i }).click();
-  await expect(page).toHaveURL(/repository=/);
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page).toHaveURL(/\/explore$/);
+  await expect(page.locator("#repository-error")).toContainText(
+    "Only public repositories on github.com are supported",
+  );
 });

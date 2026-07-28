@@ -42,7 +42,7 @@ export function ProfilePanel({
           </p>
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <MetricCard
           label="Repositories"
           value={formatCount(repositoryCount)}
@@ -63,7 +63,7 @@ export function ProfilePanel({
           value={`${coverage.percent}%`}
           hint={`${coverage.covered} of ${coverage.total} claims fully linked`}
         />
-      </dl>
+      </div>
     </div>
   );
 }

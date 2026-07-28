@@ -37,4 +37,18 @@ describe("security headers", () => {
     });
     expect(headers.has("Strict-Transport-Security")).toBe(false);
   });
+
+  it("keeps framework development scripts executable without relaxing inline scripts", () => {
+    const policy = buildContentSecurityPolicy({
+      nonce: "development-nonce",
+      production: false,
+    });
+    expect(policy).toContain(
+      "script-src 'self' 'nonce-development-nonce' 'unsafe-eval'",
+    );
+    expect(policy).not.toContain("'strict-dynamic'");
+    expect(policy.match(/script-src[^;]+/)?.[0]).not.toContain(
+      "'unsafe-inline'",
+    );
+  });
 });

@@ -16,7 +16,7 @@ export default function DemoPage() {
       <div className="max-w-2xl">
         <ProductBadge />
         <h1 className="mt-5 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          Portfolio intelligence, demonstrated.
+          Synthetic demo: portfolio intelligence.
         </h1>
         <p className="mt-4 leading-relaxed text-muted-foreground">
           This is the product working end to end on synthetic fixtures: a

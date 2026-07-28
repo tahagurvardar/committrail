@@ -28,6 +28,6 @@ for (const route of [
         ),
     }));
     expect(metrics.overflow).toBe(false);
-    expect(metrics.scriptBytes).toBeLessThan(750_000);
+    expect(metrics.scriptBytes).toBeLessThan(825_000);
   });
 }

@@ -18,13 +18,13 @@ export function buildContentSecurityPolicy(input: {
     "form-action 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",
-    `script-src 'self' 'nonce-${input.nonce}' 'strict-dynamic'${
-      input.production ? "" : " 'unsafe-eval'"
+    `script-src 'self' 'nonce-${input.nonce}'${
+      input.production ? " 'strict-dynamic'" : " 'unsafe-eval'"
     }`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https://avatars.githubusercontent.com",
     "font-src 'self'",
-    "connect-src 'self'",
+    `connect-src 'self'${input.production ? "" : " ws:"}`,
     "manifest-src 'self'",
     "worker-src 'self' blob:",
   ];

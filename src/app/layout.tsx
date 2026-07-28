@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
+import { connection } from "next/server";
 
 import { AppFooter } from "@/components/app-footer";
 import { AppHeader } from "@/components/app-header";
@@ -26,11 +28,17 @@ export const metadata: Metadata = {
   description: siteConfig.description,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // A nonce-based CSP is generated per request in the proxy. Opt the root
+  // layout into dynamic rendering so every framework script receives that
+  // request's nonce and remains executable under the policy.
+  await connection();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="en"
@@ -43,6 +51,7 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          nonce={nonce}
         >
           <a
             href="#main-content"

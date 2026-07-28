@@ -13,7 +13,7 @@ export default defineConfig({
   workers: 1,
   reporter: [["list"]],
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
+    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -33,7 +33,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "node scripts/start-e2e.mjs",
-    url: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
+    url: process.env.E2E_BASE_URL ?? "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
@@ -41,7 +41,7 @@ export default defineConfig({
       E2E_FIXTURES: "1",
       DATABASE_URL: process.env.TEST_DATABASE_URL ?? "",
       TEST_DATABASE_URL: process.env.TEST_DATABASE_URL ?? "",
-      BETTER_AUTH_URL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
+      BETTER_AUTH_URL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
       BETTER_AUTH_SECRET: "e2e-only-better-auth-secret-at-least-32-bytes",
       APP_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
       GITHUB_WEBHOOK_SECRET: "e2e-only-deterministic-webhook-secret-32-bytes",
