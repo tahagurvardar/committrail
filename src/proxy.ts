@@ -47,6 +47,7 @@ function isPrivateSurface(pathname: string): boolean {
   return (
     pathname === "/login" ||
     pathname === "/register" ||
+    pathname === "/account-deleted" ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/export") ||
