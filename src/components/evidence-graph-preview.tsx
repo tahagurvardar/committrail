@@ -6,7 +6,12 @@
 export function EvidenceGraphPreview({ className }: { className?: string }) {
   return (
     <figure className={className}>
-      <div className="overflow-x-auto rounded-xl border border-border bg-card p-2">
+      <div
+        role="region"
+        aria-label="Evidence graph"
+        tabIndex={0}
+        className="overflow-x-auto rounded-xl border border-border bg-card p-2"
+      >
         <svg
           viewBox="0 0 640 400"
           role="img"
