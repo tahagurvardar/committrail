@@ -93,11 +93,13 @@ private, no-store rendering. Public publishing, teams, billing, email delivery,
 Redis, paid queues, code execution, GitHub writes, ranking, productivity
 inference, and provider tool calls remain out of scope.
 
-## Deferred
+## Stable release operations
 
-Phase 6 may add release hardening, operational readiness, and deployment
-preparation. Billing, teams, email, and production deployment remain
-unimplemented.
+Phase 6 adds strict browser headers, startup configuration validation,
+liveness/readiness probes, sanitized structured logs, bounded worker timeouts
+and drain behavior, maintenance and migration verification, guarded database
+backup/restore commands, and deterministic browser/accessibility gates. Billing,
+teams, email, hosted scheduling, and production deployment remain unimplemented.
 
 # Phase 5 publication boundary
 

@@ -4,10 +4,12 @@ import { describe, expect, it } from "vitest";
 import { AppFooter } from "@/components/app-footer";
 
 describe("AppFooter", () => {
-  it("uses the Phase 1B status without stale Phase 0 labeling", () => {
+  it("uses the stable release status without stale phase labeling", () => {
     render(<AppFooter />);
-    expect(screen.getByText("Phase 1B activity evidence")).toBeInTheDocument();
-    expect(screen.queryByText(/phase 0 preview/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/v1\.0\.0 · Release-hardened/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/phase \d/i)).not.toBeInTheDocument();
   });
 
   it("links to the public source repository with safe external attributes", () => {

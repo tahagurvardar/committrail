@@ -50,10 +50,10 @@ describe("landing page", () => {
     }
   });
 
-  it("discloses the Phase 1B bounded public-data scope honestly", () => {
+  it("discloses the private workspace boundary honestly", () => {
     render(<HomePage />);
     expect(
-      screen.getByText(/bounded public repository facts and recent activity/i),
+      screen.getByText(/connected workspace data stays private/i),
     ).toBeInTheDocument();
   });
 });

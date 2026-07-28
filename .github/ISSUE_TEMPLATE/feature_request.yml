@@ -1,0 +1,25 @@
+name: Feature request
+description: Propose a focused evidence-first improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the user need without prescribing a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Privacy and methodology impact
+      description: Explain data, authorization, ranking, and inference implications.
+    validations:
+      required: true

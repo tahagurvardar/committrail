@@ -1,6 +1,6 @@
 {
   "name": "committrail",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -27,10 +27,18 @@
     "db:validate": "prisma validate",
     "db:studio": "prisma studio",
     "db:test:prepare": "node scripts/prepare-test-database.mjs",
+    "db:verify": "tsx scripts/verify-migrations.ts",
+    "db:backup": "node scripts/backup-postgres.mjs",
+    "db:restore": "node scripts/restore-postgres.mjs",
+    "config:check": "tsx scripts/check-config.ts",
+    "maintenance": "tsx scripts/maintenance.ts",
+    "release:check": "node scripts/release-check.mjs",
     "worker:ingestion": "tsx scripts/ingestion-worker.ts",
     "worker:ingestion:once": "tsx scripts/ingestion-worker.ts --once",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:accessibility": "playwright test --grep @accessibility",
+    "screenshots:generate": "playwright test e2e/screenshots.spec.ts --project=chromium"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.6.25",
@@ -50,6 +58,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.62.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",

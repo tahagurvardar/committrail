@@ -118,7 +118,7 @@ export default async function ExplorePage({
               cached.
             </li>
             <li>
-              Phase 1B scope adds page-one samples of commits, pull requests,
+              The v1 explorer uses page-one samples of commits, pull requests,
               standalone issues, published releases, and workflow runs. It is
               not complete history and never measures productivity or quality.
             </li>

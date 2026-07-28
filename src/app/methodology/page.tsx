@@ -27,12 +27,12 @@ const VOCABULARY = [
   {
     term: "Fact",
     definition:
-      "A record read directly from a repository: a commit, pull request, standalone issue, release, or workflow run. Phase 1B represents facts with stable identifiers but does not persist them.",
+      "A record read directly from a repository: a commit, pull request, standalone issue, release, or workflow run. Facts use stable source identifiers; an owner may retain bounded normalized evidence in a private workspace.",
   },
   {
     term: "Evidence",
     definition:
-      "A fact, file, or documentation section that has been linked to a claim as support. Evidence is a reference, not a copy — it can always be re-checked at the source.",
+      "A normalized fact linked to a claim as support, with provenance and a bounded factual projection. Evidence remains inspectable and is not proof by itself.",
   },
   {
     term: "Derived metric",
@@ -54,13 +54,13 @@ const PIPELINE = [
   },
   {
     name: "Evidence is pinned",
-    body: "Records that support a potential story — plus selected files and documentation sections — become evidence entries with permanent references.",
+    body: "Records that support a potential story become bounded evidence entries with stable source references and content hashes.",
     guarantee:
       "Evidence is referenced by stable identifiers, never paraphrased into place.",
   },
   {
     name: "Metrics are derived deterministically",
-    body: "Phase 1B computes only transparent sampled arithmetic: workflow conclusion counts, published-release intervals, and issue/PR state counts.",
+    body: "CommitTrail computes only transparent sampled arithmetic: workflow conclusion counts, published-release intervals, and issue/PR state counts.",
     guarantee: "Any derived number can be recomputed from its inputs.",
   },
   {
@@ -298,13 +298,12 @@ export default function MethodologyPage() {
 
       <p className="mt-16 max-w-2xl rounded-xl border border-border bg-surface p-6 text-sm leading-relaxed text-muted-foreground">
         <strong className="font-medium text-foreground">
-          Phase 1B status:
+          Stable v1 status:
         </strong>{" "}
-        the first pipeline stage is live—read-only public repository snapshots
-        plus bounded activity Fact records and transparent sampled arithmetic.
-        Persistence, the evidence graph, drafting, review, and publishing remain
-        later phases and are demonstrated with synthetic data—see the roadmap in
-        the repository documentation.
+        the full evidence path is available: read-only repository facts, private
+        persisted evidence and claims, optional grounded suggestions, deliberate
+        immutable publishing, and deterministic private outputs. The public demo
+        remains fictional and clearly labeled.
       </p>
     </div>
   );

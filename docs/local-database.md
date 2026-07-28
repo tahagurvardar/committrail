@@ -39,3 +39,13 @@ Apply `20260728234000_phase_5_publishing_portfolio_outputs` with PostgreSQL 17.
 The migration adds case-insensitive slug indexes, permanent reservations,
 publication snapshot constraints, public query indexes, and output revision
 integrity. No Redis, external queue, model provider, or paid service is needed.
+
+# Stable v1 verification
+
+Phase 6 adds
+`20260729001000_phase_6_auth_rate_limit`, the table required by Better Auth's
+database-backed request limiter. It also verifies the full ordered migration
+chain, required custom indexes, and immutable triggers with `npm run db:verify`.
+`npm run maintenance -- verify-invariants` checks current revision ownership and
+published slug reservations. See `docs/backup-and-restore.md` before applying
+migrations to an environment with retained data.

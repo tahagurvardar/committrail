@@ -95,6 +95,7 @@ export function ExploreForm({
         {error ? (
           <p
             id="repository-error"
+            role="alert"
             className="mt-2 text-sm text-amber-900 dark:text-amber-200"
           >
             {error}

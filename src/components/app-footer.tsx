@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ExternalLinkIcon, LogoMark } from "@/components/icons";
 import { ProductBadge } from "@/components/product-badge";
 import { siteConfig } from "@/lib/site";
+import { APP_VERSION } from "@/lib/version";
 
 export function AppFooter() {
   return (
@@ -42,9 +43,9 @@ export function AppFooter() {
             Status
           </p>
           <p className="mt-3 max-w-xs leading-relaxed text-muted-foreground">
-            Phase 1B—live read-only snapshots and bounded recent public activity
-            evidence, plus the synthetic full-product demo. No accounts,
-            persistence, AI integration, or deployment.
+            Portfolio-quality v1 with read-only GitHub ingestion, evidence
+            provenance, reviewed claims, deliberate publishing, and
+            deterministic private outputs. No production deployment is claimed.
           </p>
           <a
             href={siteConfig.repositoryUrl}
@@ -56,7 +57,8 @@ export function AppFooter() {
             Source repository
           </a>
           <p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">
-            Licensing will be decided before the public v1 release.
+            MIT licensed. Optional integrations remain server-owned and disabled
+            by default.
           </p>
         </div>
       </div>
@@ -67,7 +69,7 @@ export function AppFooter() {
             CommitTrail is an independent project and is not affiliated with,
             endorsed by, or sponsored by GitHub, Inc.
           </p>
-          <p className="font-mono">Phase 1B activity evidence</p>
+          <p className="font-mono">v{APP_VERSION}</p>
         </div>
       </div>
     </footer>
