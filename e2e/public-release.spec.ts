@@ -60,7 +60,7 @@ test("unpublished and unknown projects share the generic not-found surface", asy
     await expect(
       page.getByRole("heading", { name: /This trail doesn.t exist/i }),
     ).toBeVisible();
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute(
       "content",
       /noindex/,
     );
