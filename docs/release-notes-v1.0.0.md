@@ -28,6 +28,25 @@ Use Node 22, npm 10, PostgreSQL 17, run `npm ci`, then
 `docs/backup-and-restore.md`. The optional drafting provider remains disabled
 by default.
 
+## Verification
+
+- Node 22, npm 10, and PostgreSQL 17 release gates pass.
+- 421 unit/component tests pass across 60 files.
+- 57 PostgreSQL integration and worker/queue tests pass across five files.
+- 66 Chromium desktop/mobile browser cases pass; six project-specific
+  screenshot/mobile combinations skip intentionally.
+- Five migrations, five critical indexes, and four immutable triggers verify
+  from an empty disposable database.
+- Formatting, lint, type checking, configuration validation, production build,
+  release integrity, and CodeQL pass.
+- The runtime dependency audit reports zero vulnerabilities. Nine high findings
+  remain in the development-only ESLint/minimatch chain under the time-bounded
+  exception in `SECURITY.md`, expiring 2026-10-31.
+
+The automated matrix uses deterministic fictional fixtures and makes no live
+GitHub or model-provider calls. No paid provider is required. No production
+deployment is claimed.
+
 ## Known limitations
 
 GitHub activity is a bounded recent sample, not complete history. There is no
