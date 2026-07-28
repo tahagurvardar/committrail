@@ -265,6 +265,7 @@ suite("Phase 3 PostgreSQL queue and evidence graph", () => {
           kind: "ISSUES",
           deduplicationKey: `${repositoryId}:claim-${suffix}`,
           minimalPayload: {},
+          availableAt: new Date("2026-07-28T00:00:00Z"),
         },
       });
     }
