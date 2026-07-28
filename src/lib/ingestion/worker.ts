@@ -5,6 +5,7 @@ import type {
   IngestionJob,
   IngestionJobStatus,
   Prisma,
+  PrismaClient,
 } from "@/generated/prisma/client";
 import { getPrisma } from "@/lib/db/prisma";
 import { isDraftingError } from "@/lib/drafting/errors";
@@ -23,8 +24,9 @@ export async function claimIngestionJobs(input?: {
   workerId?: string;
   batchSize?: number;
   now?: Date;
+  database?: PrismaClient;
 }): Promise<IngestionJob[]> {
-  const prisma = getPrisma();
+  const prisma = input?.database ?? getPrisma();
   const workerId = input?.workerId ?? randomUUID();
   const batchSize = Math.min(
     Math.max(input?.batchSize ?? INGESTION_BATCH_SIZE, 1),

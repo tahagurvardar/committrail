@@ -248,6 +248,10 @@ suite("Phase 3 PostgreSQL queue and evidence graph", () => {
   it("claims unrelated jobs with SKIP LOCKED and bounded leases", async () => {
     const { claimIngestionJobs, INGESTION_LEASE_MS } =
       await import("@/lib/ingestion/worker");
+    const [{ PrismaPg }, { PrismaClient }] = await Promise.all([
+      import("@prisma/adapter-pg"),
+      import("@/generated/prisma/client"),
+    ]);
     await prisma.ingestionJob.updateMany({
       where: { workspaceId, status: { in: ["PENDING", "RUNNING"] } },
       data: { status: "CANCELLED", completedAt: new Date() },
@@ -265,16 +269,40 @@ suite("Phase 3 PostgreSQL queue and evidence graph", () => {
       });
     }
     const now = new Date("2026-07-28T01:00:00Z");
-    const [left, right] = await Promise.all([
-      claimIngestionJobs({ workerId: "worker-a", batchSize: 1, now }),
-      claimIngestionJobs({ workerId: "worker-b", batchSize: 1, now }),
-    ]);
-    expect(left).toHaveLength(1);
-    expect(right).toHaveLength(1);
-    expect(left[0].id).not.toBe(right[0].id);
-    expect(left[0].leaseExpiresAt?.getTime()).toBe(
-      now.getTime() + INGESTION_LEASE_MS,
-    );
+    const connectionString = process.env.TEST_DATABASE_URL!;
+    const leftDatabase = new PrismaClient({
+      adapter: new PrismaPg({ connectionString }),
+    });
+    const rightDatabase = new PrismaClient({
+      adapter: new PrismaPg({ connectionString }),
+    });
+    try {
+      const [left, right] = await Promise.all([
+        claimIngestionJobs({
+          workerId: "worker-a",
+          batchSize: 1,
+          now,
+          database: leftDatabase,
+        }),
+        claimIngestionJobs({
+          workerId: "worker-b",
+          batchSize: 1,
+          now,
+          database: rightDatabase,
+        }),
+      ]);
+      expect(left).toHaveLength(1);
+      expect(right).toHaveLength(1);
+      expect(left[0].id).not.toBe(right[0].id);
+      expect(left[0].leaseExpiresAt?.getTime()).toBe(
+        now.getTime() + INGESTION_LEASE_MS,
+      );
+    } finally {
+      await Promise.all([
+        leftDatabase.$disconnect(),
+        rightDatabase.$disconnect(),
+      ]);
+    }
   });
 
   it("reclaims an expired lease after worker restart", async () => {
