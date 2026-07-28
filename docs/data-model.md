@@ -37,3 +37,13 @@ equivalent request hash. Candidate-to-claim is one-to-one.
 human edit after acceptance. Candidate sentences remain immutable while review
 status and grounding freshness can change. Repository/workspace/user cascades
 remove Phase 4 rows without orphans.
+
+# Phase 5 data
+
+`PublicProfile` and `ProjectPublication` hold mutable private configuration.
+`ProjectPublicationRevision`, `PublicationClaimSnapshot`, and
+`PublicationEvidenceSnapshot` are immutable public snapshots.
+`PublicSlugReservation` persists retired names against takeover.
+`PublicationEvent` records bounded lifecycle facts. `PortfolioOutput` and
+append-only `PortfolioOutputRevision` store private deterministic output
+builders.

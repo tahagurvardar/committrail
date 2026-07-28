@@ -1,12 +1,14 @@
 # CommitTrail
 
-> **Status: Phase 4 — grounded drafting and private review.**
+> **Status: Phase 5 — deliberate publishing and portfolio outputs.**
 > The account-free explorer remains available. Users can create a private
 > personal workspace, verify a read-only GitHub App installation, track public
 > or private repositories, persist bounded normalized evidence, synchronize
 > manually, receive verified GitHub App webhooks, process durable targeted
 > jobs, inspect provenance, author private claims, and review grounded drafting
-> suggestions. There is no ranking, deployment, or public publishing.
+> suggestions. Owners may deliberately publish reviewed claims through
+> immutable privacy-safe revisions and build deterministic private portfolio
+> outputs. There is no ranking or deployment.
 
 CommitTrail uses PostgreSQL 17, Prisma ORM 7.9.1 with the `pg` driver adapter,
 Better Auth 1.6.25 with database sessions, and JOSE 6.2.4 for short-lived
@@ -21,8 +23,9 @@ RS256 GitHub App JWTs. See [local database setup](docs/local-database.md),
 
 CommitTrail is an evidence-first engineering timeline and portfolio
 intelligence platform. It reads repository facts and bounded recent activity,
-then helps owners create and review private evidence-linked claim suggestions.
-Public project milestones and case studies remain deferred.
+then helps owners create and review private evidence-linked claim suggestions,
+publish selected verified claims deliberately, and build private case-study,
+CV-bullet, and interview-story outputs.
 
 CommitTrail is deliberately _not_ a statistics dashboard. It never ranks
 developers, never infers seniority, and never treats commit counts as
@@ -39,6 +42,11 @@ productivity. See [docs/methodology.md](docs/methodology.md) and
 | `/demo`                        | Deterministic synthetic full-product preview (fictional data, labeled)   |
 | `/login`, `/register`          | Better Auth email/password identity; no email delivery                   |
 | `/dashboard/*`                 | Private delivery/job health, evidence, drafts, claims, and graph         |
+| `/dashboard/profile`           | Configure the workspace-owned public profile                             |
+| `/dashboard/publications/*`    | Draft, preview, publish, and manage immutable project revisions          |
+| `/dashboard/outputs/*`         | Build and download deterministic private portfolio outputs               |
+| `/profiles/[profileSlug]`      | PUBLIC profile and indexed PUBLIC projects                               |
+| `/projects/[projectSlug]`      | Published PUBLIC or directly shared UNLISTED project revision            |
 | `/about`                       | Product purpose, what it is / is not, trust principles                   |
 | `/methodology`                 | Facts → evidence → claims → user approval, states, boundaries            |
 | `*`                            | Custom not-found page                                                    |
@@ -181,8 +189,8 @@ failure state. Demo fixtures remain pinned by exact-value tests.
 A single Next.js application with the public provider boundary, Better Auth,
 Prisma/PostgreSQL, a read-only GitHub App, verified minimal-envelope webhook
 intake, durable targeted and grounded-drafting jobs, append-only observations,
-and a private human-reviewed claim/evidence graph. Publishing remains
-deferred. Details:
+private human-reviewed claim/evidence graph, immutable publication snapshots,
+and deterministic private output builders. Details:
 [docs/architecture.md](docs/architecture.md).
 
 Documentation index:
@@ -194,7 +202,7 @@ Documentation index:
 - [docs/methodology.md](docs/methodology.md) — evidence, claims, and approval
 - [docs/decisions/](docs/decisions) — architecture decision records
 
-## Current limitations (Phase 4)
+## Current limitations (Phase 5)
 
 - Activity is a page-one recent sample, not complete history: 20 commits, 20
   pull requests, 20 issue-endpoint records before PR filtering, 10 releases,
@@ -207,9 +215,11 @@ Documentation index:
 - The `/demo` dashboard remains fully synthetic and clearly labeled.
 - Webhook workers are explicit local/server processes; there is no scheduler,
   hosted queue, polling, or automatic redelivery.
-- Claims and grounded suggestions are private. Drafting is disabled unless an
-  operator configures a local or external OpenAI-compatible provider; there is
-  no public profile, publishing, billing, team collaboration, or deployment.
+- Claims and grounded suggestions remain private until the owner explicitly
+  selects eligible verified claims and completes the publishing ceremony.
+  Drafting is disabled unless an operator configures a local or external
+  OpenAI-compatible provider; publishing and output building need no provider.
+  There is no billing, team collaboration, custom domain, or deployment.
 - Playwright is configured but browser tests are opt-in and not in CI.
 - `npm audit` reports advisories confined to the ESLint dev toolchain;
   the runtime audit (`npm audit --omit=dev`) is clean.
@@ -220,7 +230,7 @@ Documentation index:
 CommitTrail is an independent project and is not affiliated with, endorsed
 by, or sponsored by GitHub, Inc.
 
-## Phase 4: private grounded drafting
+## Phase 4 drafting and Phase 5 publishing
 
 Grounded drafting is disabled by default and requires no paid API. An optional
 server-side OpenAI-compatible provider may be local loopback or external HTTPS;
@@ -235,3 +245,10 @@ acceptance creates or replaces a private `AI_ASSISTED` claim in `DRAFT`; human
 editing and verification remain separate audited owner actions. See
 [`docs/grounded-drafting.md`](docs/grounded-drafting.md) and
 [`docs/drafting-provider-setup.md`](docs/drafting-provider-setup.md).
+Phase 5 adds deliberate evidence-backed publishing: minimal public profiles,
+immutable project-publication revisions, explicit privacy-safe evidence
+disclosures, and deterministic private case-study, CV-bullet, and
+interview-story outputs. Nothing publishes automatically, and publishing or
+output building never requires a model provider. See
+[`docs/publishing.md`](docs/publishing.md) and
+[`docs/portfolio-outputs.md`](docs/portfolio-outputs.md).

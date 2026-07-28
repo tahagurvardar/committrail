@@ -27,3 +27,11 @@ GitHub disconnect deletes installation-owned tracked repositories under the
 existing private-data policy. Repository-scoped drafts, candidates, claims, and
 citations cascade with those repositories; provider consent remains
 workspace-level until revoked or the account is deleted.
+
+# Phase 5 lifecycle
+
+Repository disconnect removes its publications and outputs after public routes
+are unpublished and cache keys invalidated. Account deletion hides the profile,
+removes PUBLIC and UNLISTED routes, deletes profile/publication/output data
+transactionally, and retains only non-personal slug reservations against
+takeover. No public personal snapshot remains accessible.

@@ -32,7 +32,7 @@ export async function persistEvidenceRecords(input: {
           evidenceId: record.evidenceId,
         },
       },
-      select: { id: true },
+      select: { id: true, normalizedContentHash: true },
     });
     const evidence = await input.tx.repositoryEvidence.upsert({
       where: {
@@ -67,6 +67,41 @@ export async function persistEvidenceRecords(input: {
     });
     if (existing) updated += 1;
     else inserted += 1;
+    if (existing && existing.normalizedContentHash !== hash) {
+      const affected = await input.tx.projectPublication.findMany({
+        where: {
+          status: "PUBLISHED",
+          healthState: "CURRENT",
+          currentPublishedRevision: {
+            evidenceSnapshots: {
+              some: {
+                sourceRepositoryEvidenceId: evidence.id,
+                sourceContentHash: { not: hash },
+              },
+            },
+          },
+        },
+        select: { id: true, workspaceId: true },
+      });
+      if (affected.length) {
+        await input.tx.projectPublication.updateMany({
+          where: { id: { in: affected.map((publication) => publication.id) } },
+          data: {
+            healthState: "REVIEW_REQUIRED",
+            healthCheckedAt: observedAt,
+            version: { increment: 1 },
+          },
+        });
+        await input.tx.publicationEvent.createMany({
+          data: affected.map((publication) => ({
+            workspaceId: publication.workspaceId,
+            publicationId: publication.id,
+            kind: "EVIDENCE_BECAME_STALE",
+            safeMetadata: { health: "REVIEW_REQUIRED" },
+          })),
+        });
+      }
+    }
 
     if (input.source.kind === "MANUAL_SYNC") {
       await input.tx.evidenceObservation.upsert({

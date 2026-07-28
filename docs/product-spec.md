@@ -79,4 +79,13 @@ ranking, scoring, seniority, productivity, or quality inference.
   selected facts, strict sentence citations, external-transfer consent,
   immutable candidates, and human-only acceptance and verification.
 
-Publishing and portfolio outputs are deferred to Phase 5.
+Phase 5 implements publishing and portfolio outputs within the boundaries
+below.
+
+# Phase 5: deliberate publishing
+
+Reviewed verified claims can be deliberately copied into immutable public
+project revisions with explicit evidence disclosure. PUBLIC and UNLISTED are
+genuine public disclosures; UNLISTED is not authentication. Deterministic
+private portfolio outputs require no model provider. Automatic publishing,
+independent certification, scoring, and deployment remain out of scope.

@@ -11,6 +11,7 @@ import { isDraftingError } from "@/lib/drafting/errors";
 import { processDraftGenerationJob } from "@/lib/drafting/worker-handler";
 import type { GroundedDraftProvider } from "@/lib/drafting/types";
 import { isProviderError } from "@/lib/github/errors";
+import { prepareRepositoryPublicationRemoval } from "@/lib/publishing/health-service";
 import { reconcileRepositorySource } from "@/lib/repositories/reconcile";
 
 export const INGESTION_BATCH_SIZE = 10;
@@ -326,6 +327,30 @@ async function processInstallationJob(job: IngestionJob) {
     }
     if (action === "deleted") {
       await prisma.$transaction(async (tx) => {
+        const repositories = await tx.trackedRepository.findMany({
+          where: { githubInstallationId: installation.id },
+          select: { id: true },
+        });
+        const repositoryIds = repositories.map((repository) => repository.id);
+        await prepareRepositoryPublicationRemoval(
+          tx,
+          { workspaceId: installation.workspaceId },
+          repositoryIds,
+        );
+        await tx.projectPublication.updateMany({
+          where: { trackedRepositoryId: { in: repositoryIds } },
+          data: { currentPublishedRevisionId: null },
+        });
+        await tx.projectPublication.deleteMany({
+          where: { trackedRepositoryId: { in: repositoryIds } },
+        });
+        await tx.portfolioOutput.updateMany({
+          where: { trackedRepositoryId: { in: repositoryIds } },
+          data: { currentRevisionId: null },
+        });
+        await tx.portfolioOutput.deleteMany({
+          where: { trackedRepositoryId: { in: repositoryIds } },
+        });
         await tx.auditEvent.create({
           data: {
             workspaceId: installation.workspaceId,
@@ -356,12 +381,18 @@ async function processInstallationJob(job: IngestionJob) {
         },
         select: { id: true },
       });
-      await prisma.$transaction([
-        prisma.trackedRepository.updateMany({
+      await prisma.$transaction(async (tx) => {
+        const repositoryIds = repositories.map((repository) => repository.id);
+        await prepareRepositoryPublicationRemoval(
+          tx,
+          { workspaceId: installation.workspaceId },
+          repositoryIds,
+        );
+        await tx.trackedRepository.updateMany({
           where: { id: { in: repositories.map((item) => item.id) } },
           data: { trackingStatus: "INACCESSIBLE" },
-        }),
-        prisma.ingestionJob.updateMany({
+        });
+        await tx.ingestionJob.updateMany({
           where: {
             trackedRepositoryId: {
               in: repositories.map((item) => item.id),
@@ -370,8 +401,8 @@ async function processInstallationJob(job: IngestionJob) {
             status: "PENDING",
           },
           data: { status: "CANCELLED", completedAt: new Date() },
-        }),
-      ]);
+        });
+      });
       return;
     }
     if (action === "added") {

@@ -95,4 +95,14 @@ inference, and provider tool calls remain out of scope.
 
 ## Deferred
 
-Phase 5 may add deliberate publishing only from reviewed private claims.
+Phase 6 may add release hardening, operational readiness, and deployment
+preparation. Billing, teams, email, and production deployment remain
+unimplemented.
+
+# Phase 5 publication boundary
+
+Mutable profile/publication/output drafts are workspace-scoped. Public reads
+first authorize visibility by validated slug, then render only the referenced
+immutable revision. Server actions reauthorize the owner, lock mutable rows,
+recheck optimistic versions and evidence hashes, write append-only revisions,
+and invalidate bounded slug-derived cache keys after commit.

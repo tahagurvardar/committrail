@@ -9,6 +9,7 @@ import { getPrisma } from "@/lib/db/prisma";
 import { createInstallationToken } from "@/lib/github-app/client";
 import { GitHubRestPublicRepositoryActivityProvider } from "@/lib/github/github-rest-public-repository-activity-provider";
 import { GitHubRestPublicRepositoryProvider } from "@/lib/github/github-rest-public-repository-provider";
+import { markPublicationEvidenceUnavailable } from "@/lib/publishing/health-service";
 import { persistEvidenceRecords } from "@/lib/repositories/evidence-persistence";
 
 const SOURCE_FOR_JOB: Partial<Record<IngestionJobKind, ActivitySourceKind>> = {
@@ -134,17 +135,29 @@ export async function reconcileRepositorySource(input: {
       payload.action === "deleted" &&
       typeof payload.sourceGithubId === "string"
     ) {
-      await tx.repositoryEvidence.updateMany({
+      const unavailableEvidence = await tx.repositoryEvidence.findMany({
         where: {
           trackedRepositoryId: repository.id,
           evidenceType: "release",
           githubSourceId: payload.sourceGithubId,
         },
+        select: { id: true },
+      });
+      const unavailableAt = new Date();
+      await tx.repositoryEvidence.updateMany({
+        where: {
+          id: { in: unavailableEvidence.map((evidence) => evidence.id) },
+        },
         data: {
           sourceAvailability: "DELETED",
-          sourceUnavailableAt: new Date(),
+          sourceUnavailableAt: unavailableAt,
         },
       });
+      await markPublicationEvidenceUnavailable(
+        tx,
+        unavailableEvidence.map((evidence) => evidence.id),
+        unavailableAt,
+      );
     }
     await tx.trackedRepository.update({
       where: { id: repository.id },

@@ -24,3 +24,10 @@ claims, and caveats.
 
 Candidates never publish, verify, overwrite without an explicit owner action,
 or become public. Publishing and portfolio outputs remain Phase 5.
+
+# Phase 5 handoff
+
+Review acceptance creates an AI_ASSISTED private claim, not public material.
+Only later explicit claim verification makes it eligible for a separate
+publication draft. Publishing still requires exact preview, disclosure choices,
+typed confirmation, acknowledgements, and complete server-side revalidation.

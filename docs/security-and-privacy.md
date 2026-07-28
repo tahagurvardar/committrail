@@ -31,6 +31,9 @@ callbacks, and route handlers; `proxy.ts` is not the sole gate. Every private
 repository/claim/evidence/job query derives the personal workspace from the
 session and returns generic not-found behavior across owners. Composite
 foreign keys and service checks prevent cross-repository claim links.
+Publication selections and portfolio-output selections use composite
+repository foreign keys, and row locks include the authenticated workspace
+before any private record can be locked or read.
 
 Authenticated pages are dynamic and private/no-store, excluded from public
 metadata and sitemap. Public Phase 1 normalized caches never contain session,
@@ -62,3 +65,15 @@ and client-selected endpoints are rejected.
 Raw prompts, provider responses/errors, authorization, secrets, hidden
 reasoning, and chain-of-thought are never persisted or logged. A structurally
 valid candidate is not guaranteed true and cannot auto-verify or auto-publish.
+
+# Public disclosure boundary
+
+All public text is React-escaped plain text. CommitTrail renders no arbitrary
+HTML or user Markdown, images, embeds, scripts, CSS, or unsafe URLs. Private
+source snapshots redact repository identity and internal IDs. Authenticated
+previews and downloads are private/no-store. Public cache tags contain only
+validated slugs, and public routes read immutable snapshots only.
+Private-source public text is rejected when it contains known repository or
+source identifiers, GitHub URLs, SHA-like values, or numbered source
+references. Public evidence links must match both the selected repository and
+the expected evidence-type path.

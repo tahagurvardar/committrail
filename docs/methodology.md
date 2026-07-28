@@ -52,3 +52,11 @@ status: JSON shape, citation membership, evidence availability/version, text
 bounds, and conservative policy checks passed. It is not a truth probability,
 quality score, or certification. Caveats and unused-evidence counts remain
 visible for owner review.
+
+# Publication methodology
+
+Author verification means the workspace owner reviewed the claim; it is not
+independent certification. A public revision records the reviewed statement,
+its declared HUMAN or AI_ASSISTED origin, explicit disclosure snapshots, and a
+content hash. Mechanical publication health detects later source changes but
+does not infer truth, quality, seniority, rank, or productivity.
